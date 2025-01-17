@@ -2,6 +2,7 @@ package inkidatabase.groupservice.model;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,36 +14,51 @@ public class Group {
     private UUID groupId;
     private String groupName;
     private String agency;
-    private List<String> labels = new ArrayList<>(); // company labels
-    private List<String> members = new ArrayList<>(); // current members
-    private List<String> formerMembers = new ArrayList<>(); // former members (optional)
+    private List<String> labels = new ArrayList<>();
+    private List<String> members = new ArrayList<>();
+    private List<String> formerMembers = new ArrayList<>();
     private int debutYear;
-    private int disbandYear; // disband year (optional)
-    private List<String> subunits = new ArrayList<>(); // subunits (optional)
+    private int disbandYear;
+    private List<String> subunits = new ArrayList<>();
 
     // Simple constructor for testing
     public Group(String groupName, String agency, int debutYear) {
-        this(groupName, agency, debutYear, Collections.emptyList(), Collections.emptyList());
-    }
-
-    public Group(String groupName, String agency, int debutYear, List<String> labels, List<String> members) {
-        this(groupName, agency, debutYear, labels, members, Collections.emptyList(), 0, Collections.emptyList());
-    }
-
-    public Group(String groupName, String agency, int debutYear, List<String> labels, List<String> members, 
-                List<String> formerMembers, int disbandYear, List<String> subunits) {
+        this();
         this.groupId = UUID.randomUUID();
         this.groupName = groupName;
         this.agency = agency;
         this.debutYear = debutYear;
-        this.labels = new ArrayList<>(labels);
-        this.members = new ArrayList<>(members);
-        this.formerMembers = new ArrayList<>(formerMembers);
-        this.disbandYear = disbandYear;
-        this.subunits = new ArrayList<>(subunits);
     }
 
-    // Provide immutable views of the collections
+    public Group(String groupName, String agency, int debutYear, List<String> labels, List<String> members) {
+        this(groupName, agency, debutYear);
+        setLabels(labels);
+        setMembers(members);
+    }
+
+    @Builder(builderMethodName = "internalBuilder")
+    private Group(String groupName, String agency, int debutYear, List<String> labels, 
+                List<String> members, List<String> formerMembers, int disbandYear, List<String> subunits) {
+        this.groupId = UUID.randomUUID();
+        this.groupName = groupName;
+        this.agency = agency;
+        this.debutYear = debutYear;
+        this.labels = labels != null ? new ArrayList<>(labels) : new ArrayList<>();
+        this.members = members != null ? new ArrayList<>(members) : new ArrayList<>();
+        this.formerMembers = formerMembers != null ? new ArrayList<>(formerMembers) : new ArrayList<>();
+        this.disbandYear = disbandYear;
+        this.subunits = subunits != null ? new ArrayList<>(subunits) : new ArrayList<>();
+    }
+
+    // Static builder method with required parameters
+    public static GroupBuilder builder(String groupName, String agency, int debutYear) {
+        return internalBuilder()
+                .groupName(groupName)
+                .agency(agency)
+                .debutYear(debutYear);
+    }
+
+    // Collection getters that provide immutable views
     public List<String> getLabels() {
         return Collections.unmodifiableList(labels);
     }
