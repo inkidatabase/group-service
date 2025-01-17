@@ -10,13 +10,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 
 import java.util.*;
+import java.util.Properties;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 public class GroupControllerTest {
@@ -33,7 +39,19 @@ public class GroupControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(groupController).build();
+        SimpleMappingExceptionResolver exceptionResolver = new SimpleMappingExceptionResolver();
+        Properties mappings = new Properties();
+        mappings.setProperty(ResponseStatusException.class.getName(), "error");
+        exceptionResolver.setExceptionMappings(mappings);
+        exceptionResolver.setDefaultErrorView("error");
+        exceptionResolver.setDefaultStatusCode(HttpStatus.NOT_FOUND.value());
+        exceptionResolver.setWarnLogCategory("warn");
+
+        mockMvc = MockMvcBuilders
+            .standaloneSetup(groupController)
+            .setHandlerExceptionResolvers(exceptionResolver)
+            .build();
+            
         testGroup = new Group("BTS", "BigHit Music", 2013);
         testId = testGroup.getGroupId();
     }
@@ -73,6 +91,26 @@ public class GroupControllerTest {
     }
 
     @Test
+    void testGetGroupByIdNotFound() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+        when(groupService.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/groups/{id}", nonExistentId))
+               .andExpect(status().isNotFound())
+               .andExpect(result -> {
+                   Throwable ex = result.getResolvedException();
+                   assertTrue(ex instanceof ResponseStatusException, 
+                       "Expected ResponseStatusException but got " + (ex != null ? ex.getClass().getName() : "null"));
+                   ResponseStatusException responseEx = (ResponseStatusException) ex;
+                   assertEquals(HttpStatus.NOT_FOUND, responseEx.getStatusCode(), 
+                       "Expected status code NOT_FOUND but got " + responseEx.getStatusCode());
+                   String expectedMessage = String.format("Group not found with id: %s", nonExistentId);
+                   assertTrue(responseEx.getReason().contains(expectedMessage), 
+                       String.format("Expected message to contain '%s' but was '%s'", expectedMessage, responseEx.getReason()));
+               });
+    }
+
+    @Test
     void testGetGroupsByAgency() throws Exception {
         List<Group> groups = Arrays.asList(testGroup, new Group("TXT", "BigHit Music", 2019));
         when(groupService.findByAgency("BigHit Music")).thenReturn(groups);
@@ -86,13 +124,14 @@ public class GroupControllerTest {
 
     @Test
     void testGetGroupsByDebutYear() throws Exception {
-        when(groupService.findByDebutYear(2013)).thenReturn(Collections.singletonList(testGroup));
+        int debutYear = 2013;
+        when(groupService.findByDebutYear(debutYear)).thenReturn(Collections.singletonList(testGroup));
 
-        mockMvc.perform(get("/groups/debut-year/{year}", 2013))
+        mockMvc.perform(get("/groups/debut-year/{year}", debutYear))
                .andExpect(status().isOk())
                .andExpect(view().name("groups"))
                .andExpect(model().attribute("groups", Collections.singletonList(testGroup)))
-               .andExpect(model().attribute("debutYear", 2013));
+               .andExpect(model().attribute("debutYear", debutYear));
     }
 
     @Test

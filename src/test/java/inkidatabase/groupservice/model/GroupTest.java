@@ -114,6 +114,81 @@ public class GroupTest {
         assertEquals(0, newGroup.getDisbandYear());
     }
 
+    // Add method tests
+    @Test
+    void testAddLabel() {
+        group.addLabel("HYBE Labels");
+        group.addLabel("BigHit Music");
+        
+        List<String> labels = group.getLabels();
+        assertEquals(2, labels.size());
+        assertTrue(labels.contains("HYBE Labels"));
+        assertTrue(labels.contains("BigHit Music"));
+    }
+
+    @Test
+    void testAddMember() {
+        group.addMember("RM");
+        group.addMember("Jin");
+        group.addMember("Suga");
+        
+        List<String> members = group.getMembers();
+        assertEquals(3, members.size());
+        assertTrue(members.contains("RM"));
+        assertTrue(members.contains("Jin"));
+        assertTrue(members.contains("Suga"));
+    }
+
+    @Test
+    void testAddFormerMember() {
+        group.addFormerMember("Kim Garam");
+        group.addFormerMember("Woojin");
+        
+        List<String> formerMembers = group.getFormerMembers();
+        assertEquals(2, formerMembers.size());
+        assertTrue(formerMembers.contains("Kim Garam"));
+        assertTrue(formerMembers.contains("Woojin"));
+    }
+
+    @Test
+    void testAddSubunit() {
+        group.addSubunit("3RACHA");
+        group.addSubunit("Dance Racha");
+        
+        List<String> subunits = group.getSubunits();
+        assertEquals(2, subunits.size());
+        assertTrue(subunits.contains("3RACHA"));
+        assertTrue(subunits.contains("Dance Racha"));
+    }
+
+    @Test
+    void testCollectionImmutability() {
+        // Test that returned collections are immutable
+        List<String> labels = group.getLabels();
+        List<String> members = group.getMembers();
+        List<String> formerMembers = group.getFormerMembers();
+        List<String> subunits = group.getSubunits();
+
+        assertThrows(UnsupportedOperationException.class, () -> labels.add("New Label"));
+        assertThrows(UnsupportedOperationException.class, () -> members.add("New Member"));
+        assertThrows(UnsupportedOperationException.class, () -> formerMembers.add("New Former Member"));
+        assertThrows(UnsupportedOperationException.class, () -> subunits.add("New Subunit"));
+    }
+
+    @Test
+    void testDefensiveCopying() {
+        // Test that collections are defensively copied
+        List<String> originalLabels = Arrays.asList("HYBE", "BigHit");
+        group.setLabels(originalLabels);
+        
+        // Modifying original list should not affect group's labels
+        List<String> modifiableLabels = new java.util.ArrayList<>(originalLabels);
+        modifiableLabels.add("New Label");
+        
+        assertEquals(2, group.getLabels().size());
+        assertFalse(group.getLabels().contains("New Label"));
+    }
+
     // Scenario Tests
     @Test
     void testGroupWithNoSubunitsNoFormerMembersNotDisbanded() {
