@@ -113,20 +113,65 @@ public class Group {
         this.subunits = new ArrayList<>(subunits);
     }
 
-    // Methods to modify collections
+    // Enhanced add methods with validation
     public void addLabel(String label) {
-        this.labels.add(label);
+        if (isLabelValid(label)) {
+            this.labels.add(label);
+        }
     }
 
     public void addMember(String member) {
-        this.members.add(member);
+        if (isMemberValid(member)) {
+            this.members.add(member);
+        }
     }
 
     public void addFormerMember(String member) {
-        this.formerMembers.add(member);
+        if (isMemberValid(member)) {
+            this.formerMembers.add(member);
+        }
     }
 
     public void addSubunit(String subunit) {
-        this.subunits.add(subunit);
+        if (isSubunitValid(subunit)) {
+            this.subunits.add(subunit);
+        }
+    }
+
+    // Validation methods
+    public boolean isValid() {
+        return isGroupNameValid() && 
+               isAgencyValid() && 
+               isDebutYearValid() && 
+               isDisbandYearValid();
+    }
+
+    public boolean isGroupNameValid() {
+        return groupName != null && !groupName.trim().isEmpty();
+    }
+
+    public boolean isAgencyValid() {
+        return agency != null && !agency.trim().isEmpty();
+    }
+
+    public boolean isDebutYearValid() {
+        return debutYear > 1900 && debutYear <= java.time.Year.now().getValue();
+    }
+
+    public boolean isDisbandYearValid() {
+        if (disbandYear == 0) return true; // Not disbanded
+        return disbandYear >= debutYear && disbandYear <= java.time.Year.now().getValue();
+    }
+
+    public boolean isMemberValid(String member) {
+        return member != null && !member.trim().isEmpty();
+    }
+
+    public boolean isLabelValid(String label) {
+        return label != null && !label.trim().isEmpty();
+    }
+
+    public boolean isSubunitValid(String subunit) {
+        return subunit != null && !subunit.trim().isEmpty();
     }
 }
