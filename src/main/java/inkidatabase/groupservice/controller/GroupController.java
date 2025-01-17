@@ -2,11 +2,11 @@ package inkidatabase.groupservice.controller;
 
 import inkidatabase.groupservice.model.Group;
 import inkidatabase.groupservice.service.GroupService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,14 +15,28 @@ import java.util.UUID;
 @RequestMapping("/groups")
 public class GroupController {
     
-    @Autowired
-    private GroupService service;
+    private final GroupService service;
+    private static final String GROUPS_VIEW = "groups";
+    private static final String GROUP_DETAILS_VIEW = "group-details";
+
+    public GroupController(GroupService service) {
+        this.service = service;
+    }
+
+    private String prepareGroupListView(List<Group> groups, Model model) {
+        model.addAttribute("groups", groups);
+        return GROUPS_VIEW;
+    }
+
+    private String prepareGroupListView(List<Group> groups, String attributeName, Object attributeValue, Model model) {
+        model.addAttribute("groups", groups);
+        model.addAttribute(attributeName, attributeValue);
+        return GROUPS_VIEW;
+    }
 
     @GetMapping("/")
     public String getAllGroups(Model model) {
-        List<Group> allGroups = service.findAll();
-        model.addAttribute("groups", allGroups);
-        return "groups";
+        return prepareGroupListView(service.findAll(), model);
     }
 
     @PostMapping("/")
@@ -33,56 +47,44 @@ public class GroupController {
 
     @GetMapping("/{id}")
     public String getGroupById(@PathVariable UUID id, Model model) {
-        service.findById(id)
-               .ifPresent(group -> model.addAttribute("group", group));
-        return "group-details";
+        return service.findById(id)
+                     .map(group -> {
+                         model.addAttribute("group", group);
+                         return GROUP_DETAILS_VIEW;
+                     })
+                     .orElseThrow(() -> new ResponseStatusException(
+                         HttpStatus.NOT_FOUND, 
+                         String.format("Group not found with id: %s", id)
+                     ));
     }
 
     @GetMapping("/agency/{agency}")
     public String getGroupsByAgency(@PathVariable String agency, Model model) {
-        List<Group> groups = service.findByAgency(agency);
-        model.addAttribute("groups", groups);
-        model.addAttribute("agency", agency);
-        return "groups";
+        return prepareGroupListView(service.findByAgency(agency), "agency", agency, model);
     }
 
     @GetMapping("/debut-year/{year}")
     public String getGroupsByDebutYear(@PathVariable int year, Model model) {
-        List<Group> groups = service.findByDebutYear(year);
-        model.addAttribute("groups", groups);
-        model.addAttribute("debutYear", year);
-        return "groups";
+        return prepareGroupListView(service.findByDebutYear(year), "debutYear", year, model);
     }
 
     @GetMapping("/active")
     public String getActiveGroups(Model model) {
-        List<Group> groups = service.findActiveGroups();
-        model.addAttribute("groups", groups);
-        model.addAttribute("status", "Active");
-        return "groups";
+        return prepareGroupListView(service.findActiveGroups(), "status", "Active", model);
     }
 
     @GetMapping("/disbanded")
     public String getDisbandedGroups(Model model) {
-        List<Group> groups = service.findDisbandedGroups();
-        model.addAttribute("groups", groups);
-        model.addAttribute("status", "Disbanded");
-        return "groups";
+        return prepareGroupListView(service.findDisbandedGroups(), "status", "Disbanded", model);
     }
 
     @GetMapping("/member/{memberName}")
     public String getGroupsByMember(@PathVariable String memberName, Model model) {
-        List<Group> groups = service.findByMember(memberName);
-        model.addAttribute("groups", groups);
-        model.addAttribute("member", memberName);
-        return "groups";
+        return prepareGroupListView(service.findByMember(memberName), "member", memberName, model);
     }
 
     @GetMapping("/label/{label}")
     public String getGroupsByLabel(@PathVariable String label, Model model) {
-        List<Group> groups = service.findByLabel(label);
-        model.addAttribute("groups", groups);
-        model.addAttribute("label", label);
-        return "groups";
+        return prepareGroupListView(service.findByLabel(label), "label", label, model);
     }
 }
