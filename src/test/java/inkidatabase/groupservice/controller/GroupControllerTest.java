@@ -36,6 +36,8 @@ public class GroupControllerTest {
     private MockMvc mockMvc;
     private Group testGroup;
     private UUID testId;
+    private static final String GROUPS_VIEW = GroupController.GROUPS_VIEW;
+    private static final String GROUP_DETAILS_VIEW = GroupController.GROUP_DETAILS_VIEW;
 
     @BeforeEach
     void setUp() {
@@ -52,7 +54,7 @@ public class GroupControllerTest {
             .setHandlerExceptionResolvers(exceptionResolver)
             .build();
             
-        testGroup = new Group("BTS", "BigHit Music", 2013);
+        testGroup = Group.builder("BTS", "BigHit Music", 2013).build();
         testId = testGroup.getGroupId();
     }
 
@@ -60,13 +62,13 @@ public class GroupControllerTest {
     void testGetAllGroups() throws Exception {
         List<Group> groups = Arrays.asList(
             testGroup,
-            new Group("TXT", "BigHit Music", 2019)
+            Group.builder("TXT", "BigHit Music", 2019).build()
         );
         when(groupService.findAll()).thenReturn(groups);
 
         mockMvc.perform(get("/groups/"))
                .andExpect(status().isOk())
-               .andExpect(view().name("groups"))
+               .andExpect(view().name(GROUPS_VIEW))
                .andExpect(model().attribute("groups", groups));
     }
 
@@ -86,7 +88,7 @@ public class GroupControllerTest {
 
         mockMvc.perform(get("/groups/{id}", testId))
                .andExpect(status().isOk())
-               .andExpect(view().name("group-details"))
+               .andExpect(view().name(GROUP_DETAILS_VIEW))
                .andExpect(model().attribute("group", testGroup));
     }
 
@@ -112,12 +114,15 @@ public class GroupControllerTest {
 
     @Test
     void testGetGroupsByAgency() throws Exception {
-        List<Group> groups = Arrays.asList(testGroup, new Group("TXT", "BigHit Music", 2019));
+        List<Group> groups = Arrays.asList(
+            testGroup,
+            Group.builder("TXT", "BigHit Music", 2019).build()
+        );
         when(groupService.findByAgency("BigHit Music")).thenReturn(groups);
 
         mockMvc.perform(get("/groups/agency/{agency}", "BigHit Music"))
                .andExpect(status().isOk())
-               .andExpect(view().name("groups"))
+               .andExpect(view().name(GROUPS_VIEW))
                .andExpect(model().attribute("groups", groups))
                .andExpect(model().attribute("agency", "BigHit Music"));
     }
@@ -129,7 +134,7 @@ public class GroupControllerTest {
 
         mockMvc.perform(get("/groups/debut-year/{year}", debutYear))
                .andExpect(status().isOk())
-               .andExpect(view().name("groups"))
+               .andExpect(view().name(GROUPS_VIEW))
                .andExpect(model().attribute("groups", Collections.singletonList(testGroup)))
                .andExpect(model().attribute("debutYear", debutYear));
     }
@@ -140,45 +145,50 @@ public class GroupControllerTest {
 
         mockMvc.perform(get("/groups/active"))
                .andExpect(status().isOk())
-               .andExpect(view().name("groups"))
+               .andExpect(view().name(GROUPS_VIEW))
                .andExpect(model().attribute("groups", Collections.singletonList(testGroup)))
                .andExpect(model().attribute("status", "Active"));
     }
 
     @Test
     void testGetDisbandedGroups() throws Exception {
-        Group disbandedGroup = new Group("2NE1", "YG Entertainment", 2009);
-        disbandedGroup.setDisbandYear(2016);
+        Group disbandedGroup = Group.builder("2NE1", "YG Entertainment", 2009)
+                                  .disbandYear(2016)
+                                  .build();
         when(groupService.findDisbandedGroups()).thenReturn(Collections.singletonList(disbandedGroup));
 
         mockMvc.perform(get("/groups/disbanded"))
                .andExpect(status().isOk())
-               .andExpect(view().name("groups"))
+               .andExpect(view().name(GROUPS_VIEW))
                .andExpect(model().attribute("groups", Collections.singletonList(disbandedGroup)))
                .andExpect(model().attribute("status", "Disbanded"));
     }
 
     @Test
     void testGetGroupsByMember() throws Exception {
-        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga"));
-        when(groupService.findByMember("RM")).thenReturn(Collections.singletonList(testGroup));
+        Group groupWithMembers = Group.builder("BTS", "BigHit Music", 2013)
+                                    .members(Arrays.asList("RM", "Jin", "Suga"))
+                                    .build();
+        when(groupService.findByMember("RM")).thenReturn(Collections.singletonList(groupWithMembers));
 
         mockMvc.perform(get("/groups/member/{memberName}", "RM"))
                .andExpect(status().isOk())
-               .andExpect(view().name("groups"))
-               .andExpect(model().attribute("groups", Collections.singletonList(testGroup)))
+               .andExpect(view().name(GROUPS_VIEW))
+               .andExpect(model().attribute("groups", Collections.singletonList(groupWithMembers)))
                .andExpect(model().attribute("member", "RM"));
     }
 
     @Test
     void testGetGroupsByLabel() throws Exception {
-        testGroup.setLabels(Arrays.asList("HYBE", "BigHit Music"));
-        when(groupService.findByLabel("HYBE")).thenReturn(Collections.singletonList(testGroup));
+        Group groupWithLabels = Group.builder("BTS", "BigHit Music", 2013)
+                                   .labels(Arrays.asList("HYBE", "BigHit Music"))
+                                   .build();
+        when(groupService.findByLabel("HYBE")).thenReturn(Collections.singletonList(groupWithLabels));
 
         mockMvc.perform(get("/groups/label/{label}", "HYBE"))
                .andExpect(status().isOk())
-               .andExpect(view().name("groups"))
-               .andExpect(model().attribute("groups", Collections.singletonList(testGroup)))
+               .andExpect(view().name(GROUPS_VIEW))
+               .andExpect(model().attribute("groups", Collections.singletonList(groupWithLabels)))
                .andExpect(model().attribute("label", "HYBE"));
     }
 }

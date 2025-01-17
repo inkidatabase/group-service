@@ -16,8 +16,8 @@ import java.util.UUID;
 public class GroupController {
     
     private final GroupService service;
-    private static final String GROUPS_VIEW = "groups";
-    private static final String GROUP_DETAILS_VIEW = "group-details";
+    public static final String GROUPS_VIEW = "groups";
+    public static final String GROUP_DETAILS_VIEW = "group-details";
 
     public GroupController(GroupService service) {
         this.service = service;
