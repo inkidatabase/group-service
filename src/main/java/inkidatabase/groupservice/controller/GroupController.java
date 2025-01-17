@@ -24,12 +24,12 @@ public class GroupController {
     }
 
     private String prepareGroupListView(List<Group> groups, Model model) {
-        model.addAttribute("groups", groups);
+        model.addAttribute(GROUPS_VIEW, groups);
         return GROUPS_VIEW;
     }
 
     private String prepareGroupListView(List<Group> groups, String attributeName, Object attributeValue, Model model) {
-        model.addAttribute("groups", groups);
+        model.addAttribute(GROUPS_VIEW, groups);
         model.addAttribute(attributeName, attributeValue);
         return GROUPS_VIEW;
     }

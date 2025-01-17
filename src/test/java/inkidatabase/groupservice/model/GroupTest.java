@@ -9,32 +9,32 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GroupTest {
-    Group group;
+    Group btsGroup;
     UUID uuid = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        this.group = new Group();
-        this.group.setGroupId(uuid);
-        this.group.setGroupName("BTS");
-        this.group.setAgency("BigHit Music");
-        this.group.setDebutYear(2013);
+        this.btsGroup = new Group();
+        this.btsGroup.setGroupId(uuid);
+        this.btsGroup.setGroupName("BTS");
+        this.btsGroup.setAgency("BigHit Music");
+        this.btsGroup.setDebutYear(2013);
     }
 
     // Builder Pattern Tests
     @Test
     void testBuilderWithRequiredFields() {
-        Group group = Group.builder("BTS", "BigHit Music", 2013).build();
+        Group builtGroup = Group.builder("BTS", "BigHit Music", 2013).build();
         
-        assertEquals("BTS", group.getGroupName());
-        assertEquals("BigHit Music", group.getAgency());
-        assertEquals(2013, group.getDebutYear());
-        assertNotNull(group.getGroupId());
-        assertTrue(group.getLabels().isEmpty());
-        assertTrue(group.getMembers().isEmpty());
-        assertTrue(group.getFormerMembers().isEmpty());
-        assertTrue(group.getSubunits().isEmpty());
-        assertEquals(0, group.getDisbandYear());
+        assertEquals("BTS", builtGroup.getGroupName());
+        assertEquals("BigHit Music", builtGroup.getAgency());
+        assertEquals(2013, builtGroup.getDebutYear());
+        assertNotNull(builtGroup.getGroupId());
+        assertTrue(builtGroup.getLabels().isEmpty());
+        assertTrue(builtGroup.getMembers().isEmpty());
+        assertTrue(builtGroup.getFormerMembers().isEmpty());
+        assertTrue(builtGroup.getSubunits().isEmpty());
+        assertEquals(0, builtGroup.getDisbandYear());
     }
 
     @Test
@@ -44,7 +44,7 @@ public class GroupTest {
         List<String> formerMembers = Arrays.asList("Kim Garam");
         List<String> subunits = Arrays.asList("HUH x CHAEWON");
 
-        Group group = Group.builder("LE SSERAFIM", "Source Music", 2022)
+        Group lesserafim = Group.builder("LE SSERAFIM", "Source Music", 2022)
                          .labels(labels)
                          .members(members)
                          .formerMembers(formerMembers)
@@ -52,83 +52,83 @@ public class GroupTest {
                          .subunits(subunits)
                          .build();
 
-        assertEquals("LE SSERAFIM", group.getGroupName());
-        assertEquals("Source Music", group.getAgency());
-        assertEquals(2022, group.getDebutYear());
-        assertEquals(labels, group.getLabels());
-        assertEquals(members, group.getMembers());
-        assertEquals(formerMembers, group.getFormerMembers());
-        assertEquals(subunits, group.getSubunits());
-        assertEquals(0, group.getDisbandYear());
+        assertEquals("LE SSERAFIM", lesserafim.getGroupName());
+        assertEquals("Source Music", lesserafim.getAgency());
+        assertEquals(2022, lesserafim.getDebutYear());
+        assertEquals(labels, lesserafim.getLabels());
+        assertEquals(members, lesserafim.getMembers());
+        assertEquals(formerMembers, lesserafim.getFormerMembers());
+        assertEquals(subunits, lesserafim.getSubunits());
+        assertEquals(0, lesserafim.getDisbandYear());
     }
 
     @Test
     void testBuilderWithNullCollections() {
-        Group group = Group.builder("NewJeans", "ADOR", 2022)
+        Group newjeans = Group.builder("NewJeans", "ADOR", 2022)
                          .labels(null)
                          .members(null)
                          .formerMembers(null)
                          .subunits(null)
                          .build();
 
-        assertNotNull(group.getLabels());
-        assertNotNull(group.getMembers());
-        assertNotNull(group.getFormerMembers());
-        assertNotNull(group.getSubunits());
-        assertTrue(group.getLabels().isEmpty());
-        assertTrue(group.getMembers().isEmpty());
-        assertTrue(group.getFormerMembers().isEmpty());
-        assertTrue(group.getSubunits().isEmpty());
+        assertNotNull(newjeans.getLabels());
+        assertNotNull(newjeans.getMembers());
+        assertNotNull(newjeans.getFormerMembers());
+        assertNotNull(newjeans.getSubunits());
+        assertTrue(newjeans.getLabels().isEmpty());
+        assertTrue(newjeans.getMembers().isEmpty());
+        assertTrue(newjeans.getFormerMembers().isEmpty());
+        assertTrue(newjeans.getSubunits().isEmpty());
     }
 
     // Setter and Getter Tests
     @Test
     void testSetAndGetLabels() {
         List<String> labels = Arrays.asList("HYBE Labels", "BigHit Music");
-        this.group.setLabels(labels);
-        assertEquals(labels, this.group.getLabels());
-        assertEquals(2, this.group.getLabels().size());
+        this.btsGroup.setLabels(labels);
+        assertEquals(labels, this.btsGroup.getLabels());
+        assertEquals(2, this.btsGroup.getLabels().size());
     }
 
     @Test
     void testSetAndGetMembers() {
         List<String> members = Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook");
-        this.group.setMembers(members);
-        assertEquals(members, this.group.getMembers());
-        assertEquals(7, this.group.getMembers().size());
+        this.btsGroup.setMembers(members);
+        assertEquals(members, this.btsGroup.getMembers());
+        assertEquals(7, this.btsGroup.getMembers().size());
     }
 
     @Test
     void testSetAndGetSubunits() {
         List<String> subunits = Arrays.asList("Hip-hop Team", "Vocal Team", "Performance Team");
-        this.group.setSubunits(subunits);
-        assertEquals(subunits, this.group.getSubunits());
-        assertEquals(3, this.group.getSubunits().size());
+        this.btsGroup.setSubunits(subunits);
+        assertEquals(subunits, this.btsGroup.getSubunits());
+        assertEquals(3, this.btsGroup.getSubunits().size());
     }
 
     @Test
     void testGetGroupId() {
-        assertEquals(uuid, this.group.getGroupId());
+        assertEquals(uuid, this.btsGroup.getGroupId());
     }
 
     @Test
     void testGetGroupName() {
-        assertEquals("BTS", this.group.getGroupName());
+        assertEquals("BTS", this.btsGroup.getGroupName());
     }
 
     @Test
     void testGetAgency() {
-        assertEquals("BigHit Music", this.group.getAgency());
+        assertEquals("BigHit Music", this.btsGroup.getAgency());
     }   
 
     @Test
     void testGetDebutYear() {
-        assertEquals(2013, this.group.getDebutYear());
+        assertEquals(2013, this.btsGroup.getDebutYear());
     }
 
     @Test
     void testGetDisbandYear() {
-        assertEquals(0, this.group.getDisbandYear());
+        assertEquals(0, this.btsGroup.getDisbandYear());
     }
 
     // Legacy Constructor Tests
@@ -166,10 +166,10 @@ public class GroupTest {
     // Add method tests
     @Test
     void testAddLabel() {
-        group.addLabel("HYBE Labels");
-        group.addLabel("BigHit Music");
+        btsGroup.addLabel("HYBE Labels");
+        btsGroup.addLabel("BigHit Music");
         
-        List<String> labels = group.getLabels();
+        List<String> labels = btsGroup.getLabels();
         assertEquals(2, labels.size());
         assertTrue(labels.contains("HYBE Labels"));
         assertTrue(labels.contains("BigHit Music"));
@@ -177,11 +177,11 @@ public class GroupTest {
 
     @Test
     void testAddMember() {
-        group.addMember("RM");
-        group.addMember("Jin");
-        group.addMember("Suga");
+        btsGroup.addMember("RM");
+        btsGroup.addMember("Jin");
+        btsGroup.addMember("Suga");
         
-        List<String> members = group.getMembers();
+        List<String> members = btsGroup.getMembers();
         assertEquals(3, members.size());
         assertTrue(members.contains("RM"));
         assertTrue(members.contains("Jin"));
@@ -190,10 +190,10 @@ public class GroupTest {
 
     @Test
     void testAddFormerMember() {
-        group.addFormerMember("Kim Garam");
-        group.addFormerMember("Woojin");
+        btsGroup.addFormerMember("Kim Garam");
+        btsGroup.addFormerMember("Woojin");
         
-        List<String> formerMembers = group.getFormerMembers();
+        List<String> formerMembers = btsGroup.getFormerMembers();
         assertEquals(2, formerMembers.size());
         assertTrue(formerMembers.contains("Kim Garam"));
         assertTrue(formerMembers.contains("Woojin"));
@@ -201,10 +201,10 @@ public class GroupTest {
 
     @Test
     void testAddSubunit() {
-        group.addSubunit("3RACHA");
-        group.addSubunit("Dance Racha");
+        btsGroup.addSubunit("3RACHA");
+        btsGroup.addSubunit("Dance Racha");
         
-        List<String> subunits = group.getSubunits();
+        List<String> subunits = btsGroup.getSubunits();
         assertEquals(2, subunits.size());
         assertTrue(subunits.contains("3RACHA"));
         assertTrue(subunits.contains("Dance Racha"));
@@ -213,10 +213,10 @@ public class GroupTest {
     @Test
     void testCollectionImmutability() {
         // Test that returned collections are immutable
-        List<String> labels = group.getLabels();
-        List<String> members = group.getMembers();
-        List<String> formerMembers = group.getFormerMembers();
-        List<String> subunits = group.getSubunits();
+        List<String> labels = btsGroup.getLabels();
+        List<String> members = btsGroup.getMembers();
+        List<String> formerMembers = btsGroup.getFormerMembers();
+        List<String> subunits = btsGroup.getSubunits();
 
         assertThrows(UnsupportedOperationException.class, () -> labels.add("New Label"));
         assertThrows(UnsupportedOperationException.class, () -> members.add("New Member"));
@@ -228,14 +228,14 @@ public class GroupTest {
     void testDefensiveCopying() {
         // Test that collections are defensively copied
         List<String> originalLabels = Arrays.asList("HYBE", "BigHit");
-        group.setLabels(originalLabels);
+        btsGroup.setLabels(originalLabels);
         
         // Modifying original list should not affect group's labels
         List<String> modifiableLabels = new java.util.ArrayList<>(originalLabels);
         modifiableLabels.add("New Label");
         
-        assertEquals(2, group.getLabels().size());
-        assertFalse(group.getLabels().contains("New Label"));
+        assertEquals(2, btsGroup.getLabels().size());
+        assertFalse(btsGroup.getLabels().contains("New Label"));
     }
 
     // Scenario Tests
