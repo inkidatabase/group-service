@@ -2,6 +2,9 @@ package inkidatabase.groupservice.model;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import enums.GroupActiveStatus;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -200,46 +203,6 @@ public class GroupTest {
     }
 
     @Test
-    void testAddFormerMemberComprehensive() {
-        // Test valid former member addition
-        String validFormerMember = "Kim Garam";
-        btsGroup.addFormerMember(validFormerMember);
-        assertTrue(btsGroup.getFormerMembers().contains(validFormerMember));
-        
-        // Test null former member
-        int sizeBeforeNull = btsGroup.getFormerMembers().size();
-        btsGroup.addFormerMember(null);
-        assertEquals(sizeBeforeNull, btsGroup.getFormerMembers().size());
-        
-        // Test empty string former member
-        int sizeBeforeEmpty = btsGroup.getFormerMembers().size();
-        btsGroup.addFormerMember("");
-        assertEquals(sizeBeforeEmpty, btsGroup.getFormerMembers().size());
-        
-        // Test adding multiple valid former members
-        btsGroup.addFormerMember("Woojin");
-        assertEquals(2, btsGroup.getFormerMembers().size());
-        assertTrue(btsGroup.getFormerMembers().contains("Woojin"));
-    }
-
-    @Test
-    void testFormerMemberValidation() {
-        // Test valid former member
-        assertTrue(btsGroup.isMemberValid("Kim Garam"));
-        
-        // Test invalid former members
-        assertFalse(btsGroup.isMemberValid(""));
-        assertFalse(btsGroup.isMemberValid(null));
-        
-        // Test former member validation affects addition
-        int initialSize = btsGroup.getFormerMembers().size();
-        btsGroup.addFormerMember("");
-        assertEquals(initialSize, btsGroup.getFormerMembers().size());
-        btsGroup.addFormerMember(null);
-        assertEquals(initialSize, btsGroup.getFormerMembers().size());
-    }
-
-    @Test
     void testAddSubunit() {
         btsGroup.addSubunit("3RACHA");
         btsGroup.addSubunit("Dance Racha");
@@ -387,134 +350,56 @@ public class GroupTest {
         assertTrue(builderString.contains("Subunit"));
     }
 
-    // Happy Path Validation Tests
     @Test
-    void testValidGroup() {
-        Group validGroup = Group.builder("BTS", "BigHit Music", 2013)
-                               .labels(Arrays.asList("HYBE Labels"))
-                               .members(Arrays.asList("RM", "Jin"))
-                               .build();
-        
-        assertTrue(validGroup.isValid());
-        assertTrue(validGroup.isGroupNameValid());
-        assertTrue(validGroup.isAgencyValid());
-        assertTrue(validGroup.isDebutYearValid());
-        assertTrue(validGroup.isDisbandYearValid());
+    void testNewGroupStatusIsInactive() {
+        Group newGroup = new Group("NewJeans", "ADOR", 2022);
+        assertEquals(GroupActiveStatus.INACTIVE, newGroup.getStatus());
     }
 
     @Test
-    void testValidDisbandedGroup() {
-        Group disbandedGroup = Group.builder("2NE1", "YG Entertainment", 2009)
-                                  .disbandYear(2016)
-                                  .build();
-        
-        assertTrue(disbandedGroup.isValid());
-        assertTrue(disbandedGroup.isDisbandYearValid());
+    void testGroupActiveStatusDisbanded() {
+        Group group = Group.builder("IZ*ONE", "Off The Record", 2018)
+                        .disbandYear(2021)
+                        .build();
+        assertEquals(GroupActiveStatus.DISBANDED, group.getStatus());
     }
 
     @Test
-    void testValidMemberOperations() {
-        String validMember = "Jungkook";
-        assertTrue(btsGroup.isMemberValid(validMember));
-        btsGroup.addMember(validMember);
-        assertTrue(btsGroup.getMembers().contains(validMember));
+    void testGroupActiveStatusInactive() {
+        Group group = Group.builder("Test Group", "Test Agency", 2020).build();
+        assertEquals(GroupActiveStatus.INACTIVE, group.getStatus());
     }
 
     @Test
-    void testValidLabelOperations() {
-        String validLabel = "HYBE Labels";
-        assertTrue(btsGroup.isLabelValid(validLabel));
-        btsGroup.addLabel(validLabel);
-        assertTrue(btsGroup.getLabels().contains(validLabel));
-    }
+    void testGroupActiveStatusTransitions() {
+        Group group = new Group("Test Group", "Test Agency", 2020);
+        assertEquals(GroupActiveStatus.INACTIVE, group.getStatus());
 
-    // Unhappy Path Validation Tests
-    @Test
-    void testInvalidGroupName() {
-        Group invalidGroup = Group.builder("", "BigHit Music", 2013).build();
-        assertFalse(invalidGroup.isGroupNameValid());
-        assertFalse(invalidGroup.isValid());
-        
-        invalidGroup = Group.builder(null, "BigHit Music", 2013).build();
-        assertFalse(invalidGroup.isGroupNameValid());
-        assertFalse(invalidGroup.isValid());
+        group.addMember("Member 1");
+        assertEquals(GroupActiveStatus.ACTIVE, group.getStatus());
+
+        group.setDisbandYear(2023);
+        assertEquals(GroupActiveStatus.DISBANDED, group.getStatus());
     }
 
     @Test
-    void testInvalidAgency() {
-        Group invalidGroup = Group.builder("BTS", "", 2013).build();
-        assertFalse(invalidGroup.isAgencyValid());
-        assertFalse(invalidGroup.isValid());
-        
-        invalidGroup = Group.builder("BTS", null, 2013).build();
-        assertFalse(invalidGroup.isAgencyValid());
-        assertFalse(invalidGroup.isValid());
-    }
-
-    @Test
-    void testInvalidDebutYear() {
-        Group invalidGroup = Group.builder("BTS", "BigHit Music", 1800).build();
-        assertFalse(invalidGroup.isDebutYearValid());
-        assertFalse(invalidGroup.isValid());
-        
-        invalidGroup = Group.builder("BTS", "BigHit Music", 2030).build();
-        assertFalse(invalidGroup.isDebutYearValid());
-        assertFalse(invalidGroup.isValid());
-    }
-
-    @Test
-    void testInvalidDisbandYear() {
-        // Disband year before debut year
-        Group invalidGroup = Group.builder("2NE1", "YG Entertainment", 2009)
-                                .disbandYear(2008)
-                                .build();
-        assertFalse(invalidGroup.isDisbandYearValid());
-        assertFalse(invalidGroup.isValid());
-        
-        // Future disband year
-        invalidGroup = Group.builder("2NE1", "YG Entertainment", 2009)
-                          .disbandYear(2030)
-                          .build();
-        assertFalse(invalidGroup.isDisbandYearValid());
-        assertFalse(invalidGroup.isValid());
-    }
-
-    @Test
-    void testInvalidMember() {
-        assertFalse(btsGroup.isMemberValid(""));
-        assertFalse(btsGroup.isMemberValid(null));
-        
-        // Add invalid member and verify it's not added
-        int initialSize = btsGroup.getMembers().size();
-        btsGroup.addMember("");
-        assertEquals(initialSize, btsGroup.getMembers().size()); // Should not add invalid member
-        btsGroup.addMember(null);
-        assertEquals(initialSize, btsGroup.getMembers().size()); // Should not add null member
-    }
-
-    @Test
-    void testInvalidLabel() {
-        assertFalse(btsGroup.isLabelValid(""));
-        assertFalse(btsGroup.isLabelValid(null));
-        
-        // Add invalid label and verify it's not added
-        int initialSize = btsGroup.getLabels().size();
-        btsGroup.addLabel("");
-        assertEquals(initialSize, btsGroup.getLabels().size()); // Should not add invalid label
-        btsGroup.addLabel(null);
-        assertEquals(initialSize, btsGroup.getLabels().size()); // Should not add null label
-    }
-
-    @Test
-    void testInvalidSubunit() {
-        assertFalse(btsGroup.isSubunitValid(""));
-        assertFalse(btsGroup.isSubunitValid(null));
-        
-        // Add invalid subunit and verify it's not added
-        int initialSize = btsGroup.getSubunits().size();
-        btsGroup.addSubunit("");
-        assertEquals(initialSize, btsGroup.getSubunits().size()); // Should not add invalid subunit
-        btsGroup.addSubunit(null);
-        assertEquals(initialSize, btsGroup.getSubunits().size()); // Should not add null subunit
+    void testGroupActiveStatusWithNullMembers() {
+        Group group = new Group();
+        // Use reflection to set members to null and trigger status update
+        try {
+            java.lang.reflect.Field membersField = Group.class.getDeclaredField("members");
+            membersField.setAccessible(true);
+            membersField.set(group, null);
+            
+            // Get the updateStatus method and invoke it
+            java.lang.reflect.Method updateStatusMethod = 
+                Group.class.getDeclaredMethod("updateStatus");
+            updateStatusMethod.setAccessible(true);
+            updateStatusMethod.invoke(group);
+            
+            assertEquals(GroupActiveStatus.INACTIVE, group.getStatus());
+        } catch (Exception e) {
+            fail("Failed to test null members case: " + e.getMessage());
+        }
     }
 }

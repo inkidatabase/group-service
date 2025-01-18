@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import enums.GroupActiveStatus;
 
 @Getter 
 @NoArgsConstructor
@@ -20,6 +21,7 @@ public class Group {
     private int debutYear;
     private int disbandYear;
     private List<String> subunits = new ArrayList<>();
+    private GroupActiveStatus status = GroupActiveStatus.ACTIVE;
 
     // Simple constructor for testing
     public Group(String groupName, String agency, int debutYear) {
@@ -28,6 +30,7 @@ public class Group {
         this.groupName = groupName;
         this.agency = agency;
         this.debutYear = debutYear;
+        updateStatus();
     }
 
     public Group(String groupName, String agency, int debutYear, List<String> labels, List<String> members) {
@@ -48,6 +51,7 @@ public class Group {
         this.formerMembers = formerMembers != null ? new ArrayList<>(formerMembers) : new ArrayList<>();
         this.disbandYear = disbandYear;
         this.subunits = subunits != null ? new ArrayList<>(subunits) : new ArrayList<>();
+        updateStatus();
     }
 
     // Static builder method with required parameters
@@ -94,6 +98,7 @@ public class Group {
 
     public void setDisbandYear(int disbandYear) {
         this.disbandYear = disbandYear;
+        updateStatus();
     }
 
     // Setters for collections with defensive copying
@@ -103,75 +108,44 @@ public class Group {
 
     public void setMembers(List<String> members) {
         this.members = new ArrayList<>(members);
+        updateStatus();
     }
 
     public void setFormerMembers(List<String> formerMembers) {
         this.formerMembers = new ArrayList<>(formerMembers);
+        updateStatus();
     }
 
     public void setSubunits(List<String> subunits) {
         this.subunits = new ArrayList<>(subunits);
     }
 
-    // Enhanced add methods with validation
+    // Methods to modify collections
     public void addLabel(String label) {
-        if (isLabelValid(label)) {
-            this.labels.add(label);
-        }
+        this.labels.add(label);
     }
 
     public void addMember(String member) {
-        if (isMemberValid(member)) {
-            this.members.add(member);
-        }
+        this.members.add(member);
+        updateStatus();
     }
 
     public void addFormerMember(String member) {
-        if (isMemberValid(member)) {
-            this.formerMembers.add(member);
-        }
+        this.formerMembers.add(member);
+        updateStatus();
     }
 
     public void addSubunit(String subunit) {
-        if (isSubunitValid(subunit)) {
-            this.subunits.add(subunit);
+        this.subunits.add(subunit);
+    }
+
+    private void updateStatus() {
+        if (disbandYear > 0) {
+            status = GroupActiveStatus.DISBANDED;
+        } else if (members == null || members.isEmpty()) {
+            status = GroupActiveStatus.INACTIVE;
+        } else {
+            status = GroupActiveStatus.ACTIVE;
         }
-    }
-
-    // Validation methods
-    public boolean isValid() {
-        return isGroupNameValid() && 
-               isAgencyValid() && 
-               isDebutYearValid() && 
-               isDisbandYearValid();
-    }
-
-    public boolean isGroupNameValid() {
-        return groupName != null && !groupName.trim().isEmpty();
-    }
-
-    public boolean isAgencyValid() {
-        return agency != null && !agency.trim().isEmpty();
-    }
-
-    public boolean isDebutYearValid() {
-        return debutYear > 1900 && debutYear <= java.time.Year.now().getValue();
-    }
-
-    public boolean isDisbandYearValid() {
-        if (disbandYear == 0) return true; // Not disbanded
-        return disbandYear >= debutYear && disbandYear <= java.time.Year.now().getValue();
-    }
-
-    public boolean isMemberValid(String member) {
-        return member != null && !member.trim().isEmpty();
-    }
-
-    public boolean isLabelValid(String label) {
-        return label != null && !label.trim().isEmpty();
-    }
-
-    public boolean isSubunitValid(String subunit) {
-        return subunit != null && !subunit.trim().isEmpty();
     }
 }
