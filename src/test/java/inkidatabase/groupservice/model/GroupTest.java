@@ -2,6 +2,9 @@ package inkidatabase.groupservice.model;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import enums.GroupActiveStatus;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -345,5 +348,58 @@ public class GroupTest {
         assertTrue(builderString.contains("RM"));
         assertTrue(builderString.contains("Former"));
         assertTrue(builderString.contains("Subunit"));
+    }
+
+    @Test
+    void testNewGroupStatusIsInactive() {
+        Group newGroup = new Group("NewJeans", "ADOR", 2022);
+        assertEquals(GroupActiveStatus.INACTIVE, newGroup.getStatus());
+    }
+
+    @Test
+    void testGroupActiveStatusDisbanded() {
+        Group group = Group.builder("IZ*ONE", "Off The Record", 2018)
+                        .disbandYear(2021)
+                        .build();
+        assertEquals(GroupActiveStatus.DISBANDED, group.getStatus());
+    }
+
+    @Test
+    void testGroupActiveStatusInactive() {
+        Group group = Group.builder("Test Group", "Test Agency", 2020).build();
+        assertEquals(GroupActiveStatus.INACTIVE, group.getStatus());
+    }
+
+    @Test
+    void testGroupActiveStatusTransitions() {
+        Group group = new Group("Test Group", "Test Agency", 2020);
+        assertEquals(GroupActiveStatus.INACTIVE, group.getStatus());
+
+        group.addMember("Member 1");
+        assertEquals(GroupActiveStatus.ACTIVE, group.getStatus());
+
+        group.setDisbandYear(2023);
+        assertEquals(GroupActiveStatus.DISBANDED, group.getStatus());
+    }
+
+    @Test
+    void testGroupActiveStatusWithNullMembers() {
+        Group group = new Group();
+        // Use reflection to set members to null and trigger status update
+        try {
+            java.lang.reflect.Field membersField = Group.class.getDeclaredField("members");
+            membersField.setAccessible(true);
+            membersField.set(group, null);
+            
+            // Get the updateStatus method and invoke it
+            java.lang.reflect.Method updateStatusMethod = 
+                Group.class.getDeclaredMethod("updateStatus");
+            updateStatusMethod.setAccessible(true);
+            updateStatusMethod.invoke(group);
+            
+            assertEquals(GroupActiveStatus.INACTIVE, group.getStatus());
+        } catch (Exception e) {
+            fail("Failed to test null members case: " + e.getMessage());
+        }
     }
 }
