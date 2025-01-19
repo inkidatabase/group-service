@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -94,6 +95,18 @@ class GroupServiceImplTest {
     }
 
     @Test
+    void update_WhenGroupNotFound_ShouldThrowIllegalArgumentException() {
+        UUID nonExistentId = UUID.randomUUID();
+        when(repository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        assertThat(catchThrowable(() -> groupService.update(nonExistentId, updateRequest)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Group not found with id: " + nonExistentId);
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
     void findAll_ShouldReturnAllGroupDTOs() {
         when(repository.findAll()).thenReturn(Collections.singletonList(testGroup));
         when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
@@ -161,19 +174,19 @@ class GroupServiceImplTest {
 
     @Test
     void findDisbandedGroups_ShouldReturnDisbandedGroupDTOs() {
-        Group disbandedGroup = new Group("2NE1", "YG", 2009);
-        disbandedGroup.setDisbandYear(2016);
+        Group disbandedTestGroup = new Group("2NE1", "YG", 2009);
+        disbandedTestGroup.setDisbandYear(2016);
         
-        GroupDTO disbandedDTO = GroupDTO.builder()
-                .groupId(disbandedGroup.getGroupId())
-                .groupName(disbandedGroup.getGroupName())
-                .agency(disbandedGroup.getAgency())
-                .debutYear(disbandedGroup.getDebutYear())
-                .disbandYear(disbandedGroup.getDisbandYear())
+        GroupDTO disbandedTestDTO = GroupDTO.builder()
+                .groupId(disbandedTestGroup.getGroupId())
+                .groupName(disbandedTestGroup.getGroupName())
+                .agency(disbandedTestGroup.getAgency())
+                .debutYear(disbandedTestGroup.getDebutYear())
+                .disbandYear(disbandedTestGroup.getDisbandYear())
                 .build();
 
-        when(repository.findDisbandedGroups()).thenReturn(Collections.singletonList(disbandedGroup));
-        when(mapper.toDTO(disbandedGroup)).thenReturn(disbandedDTO);
+        when(repository.findDisbandedGroups()).thenReturn(Collections.singletonList(disbandedTestGroup));
+        when(mapper.toDTO(disbandedTestGroup)).thenReturn(disbandedTestDTO);
 
         List<GroupDTO> result = groupService.findDisbandedGroups();
 
@@ -183,20 +196,6 @@ class GroupServiceImplTest {
 
     @Test
     void findByMember_ShouldReturnGroupDTOList() {
-        Group testGroup = new Group("BTS", "HYBE", 2013);
-        testGroup.setGroupId(UUID.randomUUID());
-        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
-        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
-
-        GroupDTO testGroupDTO = GroupDTO.builder()
-                .groupId(testGroup.getGroupId())
-                .groupName(testGroup.getGroupName())
-                .agency(testGroup.getAgency())
-                .debutYear(testGroup.getDebutYear())
-                .members(testGroup.getMembers())
-                .labels(testGroup.getLabels())
-                .build();
-
         when(repository.findByMembersContaining("RM")).thenReturn(Collections.singletonList(testGroup));
         when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
@@ -208,20 +207,6 @@ class GroupServiceImplTest {
 
     @Test
     void findByLabel_ShouldReturnGroupDTOList() {
-        Group testGroup = new Group("BTS", "HYBE", 2013);
-        testGroup.setGroupId(UUID.randomUUID());
-        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
-        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
-
-        GroupDTO testGroupDTO = GroupDTO.builder()
-                .groupId(testGroup.getGroupId())
-                .groupName(testGroup.getGroupName())
-                .agency(testGroup.getAgency())
-                .debutYear(testGroup.getDebutYear())
-                .members(testGroup.getMembers())
-                .labels(testGroup.getLabels())
-                .build();
-
         when(repository.findByLabelsContaining("kpop")).thenReturn(Collections.singletonList(testGroup));
         when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
