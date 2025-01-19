@@ -1,6 +1,9 @@
 package inkidatabase.groupservice.controller;
 
-import inkidatabase.groupservice.model.Group;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import inkidatabase.groupservice.dto.CreateGroupRequest;
+import inkidatabase.groupservice.dto.GroupDTO;
+import inkidatabase.groupservice.dto.UpdateGroupRequest;
 import inkidatabase.groupservice.service.GroupService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
@@ -19,7 +21,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class GroupControllerTest {
@@ -31,137 +32,155 @@ class GroupControllerTest {
     private GroupController groupController;
 
     private MockMvc mockMvc;
-    private Group testGroup;
-    private UUID testId;
+    private GroupDTO testGroupDTO;
+    private List<GroupDTO> groupDTOs;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(groupController)
-                                .build();
-        objectMapper = new ObjectMapper();
+                .build();
         
-        testId = UUID.randomUUID();
-        testGroup = new Group("BTS", "HYBE", 2013);
-        testGroup.setGroupId(testId);
-        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
-        testGroup.setLabels(Arrays.asList("kpop", "boy-group"));
+        objectMapper = new ObjectMapper();
+
+        testGroupDTO = GroupDTO.builder()
+                .groupId(UUID.randomUUID())
+                .groupName("BTS")
+                .agency("HYBE")
+                .debutYear(2013)
+                .members(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"))
+                .labels(Arrays.asList("kpop", "bighit"))
+                .build();
+
+        groupDTOs = Arrays.asList(testGroupDTO);
     }
 
     @Test
-    void getAllGroups_ShouldReturnListOfGroups() throws Exception {
-        List<Group> groups = Arrays.asList(testGroup);
-        when(groupService.findAll()).thenReturn(groups);
+    void getAllGroups_ReturnsGroupList() throws Exception {
+        when(groupService.findAll()).thenReturn(groupDTOs);
 
-        mockMvc.perform(get("/groups/"))
-               .andExpect(status().isOk())
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               .andExpect(jsonPath("$", hasSize(1)))
-               .andExpect(jsonPath("$[0].groupName", is("BTS")));
+        mockMvc.perform(get("/groups"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].groupName").value("BTS"));
     }
 
     @Test
-    void createGroup_ShouldReturnCreatedGroup() throws Exception {
-        when(groupService.create(any(Group.class))).thenReturn(testGroup);
+    void createGroup_ReturnsCreatedGroup() throws Exception {
+        CreateGroupRequest request = CreateGroupRequest.builder()
+                .groupName("BTS")
+                .agency("HYBE")
+                .debutYear(2013)
+                .members(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"))
+                .build();
 
-        mockMvc.perform(post("/groups/")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(objectMapper.writeValueAsString(testGroup)))
-               .andExpect(status().isOk())
-               .andExpect(jsonPath("$.groupName", is("BTS")))
-               .andExpect(jsonPath("$.agency", is("HYBE")))
-               .andExpect(jsonPath("$.debutYear", is(2013)));
+        when(groupService.create(any(CreateGroupRequest.class))).thenReturn(testGroupDTO);
+
+        mockMvc.perform(post("/groups")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.groupName").value("BTS"));
     }
 
     @Test
-    void getGroupById_WhenGroupExists_ShouldReturnGroup() throws Exception {
-        when(groupService.findById(testId)).thenReturn(Optional.of(testGroup));
+    void getGroupById_ReturnsGroup() throws Exception {
+        UUID testId = testGroupDTO.getGroupId();
+        when(groupService.findById(testId)).thenReturn(Optional.of(testGroupDTO));
 
         mockMvc.perform(get("/groups/" + testId))
-               .andExpect(status().isOk())
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               .andExpect(jsonPath("$.groupName", is("BTS")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.groupName").value("BTS"));
     }
 
     @Test
-    void getGroupById_WhenGroupDoesNotExist_ShouldReturn404() throws Exception {
+    void getGroupById_NotFound_Returns404() throws Exception {
+        UUID testId = UUID.randomUUID();
         when(groupService.findById(testId)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/groups/" + testId))
-               .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void testGetGroupsByAgency() throws Exception {
-        List<Group> groups = Arrays.asList(testGroup);
-        when(groupService.findByAgency("HYBE")).thenReturn(groups);
+    void updateGroup_ReturnsUpdatedGroup() throws Exception {
+        UUID testId = testGroupDTO.getGroupId();
+        UpdateGroupRequest request = UpdateGroupRequest.builder()
+                .groupName("BTS")
+                .agency("HYBE")
+                .debutYear(2013)
+                .members(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"))
+                .build();
+
+        when(groupService.update(any(UUID.class), any(UpdateGroupRequest.class))).thenReturn(testGroupDTO);
+
+        mockMvc.perform(put("/groups/" + testId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.groupName").value("BTS"));
+    }
+
+    @Test
+    void getGroupsByAgency_ReturnsGroupList() throws Exception {
+        when(groupService.findByAgency("HYBE")).thenReturn(groupDTOs);
 
         mockMvc.perform(get("/groups/agency/HYBE"))
-               .andExpect(status().isOk())
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               .andExpect(jsonPath("$", hasSize(1)))
-               .andExpect(jsonPath("$[0].groupName", is("BTS")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].groupName").value("BTS"));
     }
 
     @Test
-    void testGetGroupsByDebutYear() throws Exception {
+    void getGroupsByDebutYear_ReturnsGroupList() throws Exception {
         int debutYear = 2013;
-        when(groupService.findByDebutYear(debutYear)).thenReturn(Collections.singletonList(testGroup));
+        when(groupService.findByDebutYear(debutYear)).thenReturn(Collections.singletonList(testGroupDTO));
 
         mockMvc.perform(get("/groups/debut-year/" + debutYear))
-               .andExpect(status().isOk())
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               .andExpect(jsonPath("$", hasSize(1)))
-               .andExpect(jsonPath("$[0].groupName", is("BTS")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].groupName").value("BTS"));
     }
 
     @Test
-    void testGetActiveGroups() throws Exception {
-        when(groupService.findActiveGroups()).thenReturn(Collections.singletonList(testGroup));
+    void getActiveGroups_ReturnsGroupList() throws Exception {
+        when(groupService.findActiveGroups()).thenReturn(Collections.singletonList(testGroupDTO));
 
         mockMvc.perform(get("/groups/active"))
-               .andExpect(status().isOk())
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               .andExpect(jsonPath("$", hasSize(1)))
-               .andExpect(jsonPath("$[0].groupName", is("BTS")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].groupName").value("BTS"));
     }
 
     @Test
-    void testGetDisbandedGroups() throws Exception {
-        Group disbandedGroup = new Group("2NE1", "YG Entertainment", 2009);
-        disbandedGroup.setDisbandYear(2016);
-        when(groupService.findDisbandedGroups()).thenReturn(Collections.singletonList(disbandedGroup));
+    void getDisbandedGroups_ReturnsGroupList() throws Exception {
+        GroupDTO disbandedGroupDTO = GroupDTO.builder()
+                .groupId(UUID.randomUUID())
+                .groupName("2NE1")
+                .agency("YG")
+                .debutYear(2009)
+                .disbandYear(2016)
+                .build();
+
+        when(groupService.findDisbandedGroups()).thenReturn(Collections.singletonList(disbandedGroupDTO));
 
         mockMvc.perform(get("/groups/disbanded"))
-               .andExpect(status().isOk())
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               .andExpect(jsonPath("$", hasSize(1)))
-               .andExpect(jsonPath("$[0].groupName", is("2NE1")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].groupName").value("2NE1"));
     }
 
     @Test
-    void testGetGroupsByMember() throws Exception {
-        Group groupWithMembers = new Group("BTS", "HYBE", 2013);
-        groupWithMembers.setMembers(Arrays.asList("RM", "Jin", "Suga"));
-        when(groupService.findByMember("RM")).thenReturn(Collections.singletonList(groupWithMembers));
+    void getGroupsByMember_ReturnsGroupList() throws Exception {
+        when(groupService.findByMember("RM")).thenReturn(Collections.singletonList(testGroupDTO));
 
         mockMvc.perform(get("/groups/member/RM"))
-               .andExpect(status().isOk())
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               .andExpect(jsonPath("$", hasSize(1)))
-               .andExpect(jsonPath("$[0].groupName", is("BTS")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].groupName").value("BTS"));
     }
 
     @Test
-    void testGetGroupsByLabel() throws Exception {
-        Group groupWithLabels = new Group("BTS", "HYBE", 2013);
-        groupWithLabels.setLabels(Arrays.asList("kpop", "boy-group"));
-        when(groupService.findByLabel("kpop")).thenReturn(Collections.singletonList(groupWithLabels));
+    void getGroupsByLabel_ReturnsGroupList() throws Exception {
+        when(groupService.findByLabel("kpop")).thenReturn(Collections.singletonList(testGroupDTO));
 
         mockMvc.perform(get("/groups/label/kpop"))
-               .andExpect(status().isOk())
-               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-               .andExpect(jsonPath("$", hasSize(1)))
-               .andExpect(jsonPath("$[0].groupName", is("BTS")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].groupName").value("BTS"));
     }
 }

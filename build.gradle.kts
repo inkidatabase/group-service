@@ -33,6 +33,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
@@ -40,7 +41,7 @@ dependencies {
     
     // Testing dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("com.h2database:h2")  // H2 database for testing
+    testImplementation("com.h2database:h2")  
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumJavaVersion")
@@ -51,8 +52,6 @@ dependencies {
 
     // PostgreSQL driver
     implementation("org.postgresql:postgresql:42.6.0")
-    // Spring Data JPA
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     // Environment configuration
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
 }

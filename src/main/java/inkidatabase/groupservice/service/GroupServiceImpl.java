@@ -1,65 +1,100 @@
 package inkidatabase.groupservice.service;
 
+import inkidatabase.groupservice.dto.CreateGroupRequest;
+import inkidatabase.groupservice.dto.GroupDTO;
+import inkidatabase.groupservice.dto.UpdateGroupRequest;
+import inkidatabase.groupservice.mapper.GroupMapper;
 import inkidatabase.groupservice.model.Group;
 import inkidatabase.groupservice.repository.GroupRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class GroupServiceImpl implements GroupService {
+    
+    private final GroupRepository repository;
+    private final GroupMapper mapper;
 
-    @Autowired
-    private GroupRepository groupRepository;
-
-    @Override
-    public Group create(Group group) {
-        if (group.getGroupId() == null) {
-            group.setGroupId(UUID.randomUUID());
-        }
-        return groupRepository.save(group);
+    public GroupServiceImpl(GroupRepository repository, GroupMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 
     @Override
-    public List<Group> findAll() {
-        return groupRepository.findAll();
+    public List<GroupDTO> findAll() {
+        return repository.findAll().stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<Group> findById(UUID groupId) {
-        return groupRepository.findById(groupId);
+    public Optional<GroupDTO> findById(UUID id) {
+        return repository.findById(id)
+                .map(mapper::toDTO);
     }
 
     @Override
-    public List<Group> findByAgency(String agency) {
-        return groupRepository.findByAgencyIgnoreCase(agency);
+    public GroupDTO create(CreateGroupRequest request) {
+        Group group = mapper.toEntity(request);
+        Group savedGroup = repository.save(group);
+        return mapper.toDTO(savedGroup);
     }
 
     @Override
-    public List<Group> findByDebutYear(int year) {
-        return groupRepository.findByDebutYear(year);
+    public GroupDTO update(UUID id, UpdateGroupRequest request) {
+        Group existingGroup = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with id: " + id));
+        
+        mapper.updateEntityFromRequest(existingGroup, request);
+        Group updatedGroup = repository.save(existingGroup);
+        return mapper.toDTO(updatedGroup);
     }
 
     @Override
-    public List<Group> findActiveGroups() {
-        return groupRepository.findActiveGroups();
+    public List<GroupDTO> findByAgency(String agency) {
+        return repository.findByAgencyIgnoreCase(agency).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Group> findDisbandedGroups() {
-        return groupRepository.findDisbandedGroups();
+    public List<GroupDTO> findByDebutYear(int year) {
+        return repository.findByDebutYear(year).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Group> findByMember(String memberName) {
-        return groupRepository.findByMember(memberName);
+    public List<GroupDTO> findActiveGroups() {
+        return repository.findActiveGroups().stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Group> findByLabel(String label) {
-        return groupRepository.findByLabel(label);
+    public List<GroupDTO> findDisbandedGroups() {
+        return repository.findDisbandedGroups().stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<GroupDTO> findByMember(String memberName) {
+        return repository.findByMembersContaining(memberName).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<GroupDTO> findByLabel(String label) {
+        return repository.findByLabelsContaining(label).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

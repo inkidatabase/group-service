@@ -1,203 +1,233 @@
 package inkidatabase.groupservice.service;
 
+import inkidatabase.groupservice.dto.CreateGroupRequest;
+import inkidatabase.groupservice.dto.GroupDTO;
+import inkidatabase.groupservice.dto.UpdateGroupRequest;
+import inkidatabase.groupservice.mapper.GroupMapper;
 import inkidatabase.groupservice.model.Group;
 import inkidatabase.groupservice.repository.GroupRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class GroupServiceImplTest {
 
     @Mock
-    private GroupRepository groupRepository;
+    private GroupRepository repository;
 
-    @InjectMocks
-    private GroupServiceImpl groupService;
+    @Mock
+    private GroupMapper mapper;
 
+    private GroupService groupService;
     private Group testGroup;
-    private UUID testId;
+    private GroupDTO testGroupDTO;
+    private CreateGroupRequest createRequest;
+    private UpdateGroupRequest updateRequest;
 
     @BeforeEach
     void setUp() {
-        testId = UUID.randomUUID();
+        groupService = new GroupServiceImpl(repository, mapper);
+
         testGroup = new Group("BTS", "HYBE", 2013);
-        testGroup.setGroupId(testId);
+        testGroup.setGroupId(UUID.randomUUID());
         testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
-        testGroup.setLabels(Arrays.asList("kpop", "boy-group"));
+        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
+
+        testGroupDTO = GroupDTO.builder()
+                .groupId(testGroup.getGroupId())
+                .groupName(testGroup.getGroupName())
+                .agency(testGroup.getAgency())
+                .debutYear(testGroup.getDebutYear())
+                .members(testGroup.getMembers())
+                .labels(testGroup.getLabels())
+                .build();
+
+        createRequest = CreateGroupRequest.builder()
+                .groupName("BTS")
+                .agency("HYBE")
+                .debutYear(2013)
+                .members(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"))
+                .build();
+
+        updateRequest = UpdateGroupRequest.builder()
+                .groupName("BTS")
+                .agency("HYBE")
+                .debutYear(2013)
+                .members(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"))
+                .build();
     }
 
     @Test
-    void create_WithNullId_ShouldGenerateNewId() {
-        // Arrange
-        Group groupWithNullId = new Group("TXT", "HYBE", 2019);
-        groupWithNullId.setGroupId(null);
-        when(groupRepository.save(any(Group.class))).thenAnswer(i -> i.getArgument(0));
-        
-        // Act
-        Group createdGroup = groupService.create(groupWithNullId);
-        
-        // Assert
-        assertNotNull(createdGroup.getGroupId(), "Group ID should be generated when null");
-        verify(groupRepository).save(any(Group.class));
+    void create_WithValidRequest_ShouldReturnGroupDTO() {
+        when(mapper.toEntity(createRequest)).thenReturn(testGroup);
+        when(repository.save(any(Group.class))).thenReturn(testGroup);
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
+
+        GroupDTO result = groupService.create(createRequest);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getGroupName()).isEqualTo("BTS");
+        verify(repository).save(any(Group.class));
     }
 
     @Test
-    void create_WithExistingId_ShouldPreserveId() {
-        // Arrange
-        when(groupRepository.save(testGroup)).thenReturn(testGroup);
-        
-        // Act
-        Group createdGroup = groupService.create(testGroup);
-        
-        // Assert
-        assertEquals(testId, createdGroup.getGroupId(), "Group ID should be preserved when provided");
-        verify(groupRepository).save(testGroup);
+    void update_WithValidRequest_ShouldReturnUpdatedGroupDTO() {
+        UUID groupId = testGroup.getGroupId();
+        when(repository.findById(groupId)).thenReturn(Optional.of(testGroup));
+        when(repository.save(any(Group.class))).thenReturn(testGroup);
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
+
+        GroupDTO result = groupService.update(groupId, updateRequest);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getGroupName()).isEqualTo("BTS");
+        verify(repository).save(any(Group.class));
     }
 
     @Test
-    void findAll_ShouldReturnAllGroups() {
-        // Arrange
-        List<Group> expectedGroups = Arrays.asList(
-            testGroup,
-            new Group("TXT", "HYBE", 2019)
-        );
-        when(groupRepository.findAll()).thenReturn(expectedGroups);
+    void findAll_ShouldReturnAllGroupDTOs() {
+        when(repository.findAll()).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        // Act
-        List<Group> actualGroups = groupService.findAll();
-        
-        // Assert
-        assertEquals(expectedGroups.size(), actualGroups.size(), "Should return all groups");
-        assertTrue(actualGroups.contains(testGroup), "Should contain test group");
-        verify(groupRepository).findAll();
+        List<GroupDTO> result = groupService.findAll();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getGroupName()).isEqualTo("BTS");
     }
 
     @Test
-    void findById_WhenExists_ShouldReturnGroup() {
-        // Arrange
-        when(groupRepository.findById(testId)).thenReturn(Optional.of(testGroup));
+    void findById_WhenExists_ShouldReturnGroupDTO() {
+        UUID groupId = testGroup.getGroupId();
+        when(repository.findById(groupId)).thenReturn(Optional.of(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        // Act
-        Optional<Group> found = groupService.findById(testId);
-        
-        // Assert
-        assertTrue(found.isPresent(), "Should find existing group");
-        assertEquals(testGroup, found.get(), "Should return correct group");
-        verify(groupRepository).findById(testId);
+        Optional<GroupDTO> result = groupService.findById(groupId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getGroupName()).isEqualTo("BTS");
     }
 
     @Test
     void findById_WhenNotExists_ShouldReturnEmpty() {
-        // Arrange
-        when(groupRepository.findById(testId)).thenReturn(Optional.empty());
+        UUID groupId = UUID.randomUUID();
+        when(repository.findById(groupId)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<Group> found = groupService.findById(testId);
-        
-        // Assert
-        assertTrue(found.isEmpty(), "Should return empty when group not found");
-        verify(groupRepository).findById(testId);
+        Optional<GroupDTO> result = groupService.findById(groupId);
+
+        assertThat(result).isEmpty();
     }
 
     @Test
-    void findByAgency_ShouldReturnMatchingGroups() {
-        // Arrange
-        List<Group> expectedGroups = Collections.singletonList(testGroup);
-        when(groupRepository.findByAgencyIgnoreCase("HYBE")).thenReturn(expectedGroups);
+    void findByAgency_ShouldReturnGroupDTOs() {
+        when(repository.findByAgencyIgnoreCase("HYBE")).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        // Act
-        List<Group> actualGroups = groupService.findByAgency("HYBE");
-        
-        // Assert
-        assertEquals(expectedGroups.size(), actualGroups.size(), "Should return all matching groups");
-        assertTrue(actualGroups.contains(testGroup), "Should contain matching group");
-        verify(groupRepository).findByAgencyIgnoreCase("HYBE");
+        List<GroupDTO> result = groupService.findByAgency("HYBE");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getAgency()).isEqualTo("HYBE");
     }
 
     @Test
-    void findByDebutYear_ShouldReturnMatchingGroups() {
-        // Arrange
-        List<Group> expectedGroups = Collections.singletonList(testGroup);
-        when(groupRepository.findByDebutYear(2013)).thenReturn(expectedGroups);
+    void findByDebutYear_ShouldReturnGroupDTOs() {
+        when(repository.findByDebutYear(2013)).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        // Act
-        List<Group> actualGroups = groupService.findByDebutYear(2013);
-        
-        // Assert
-        assertEquals(expectedGroups.size(), actualGroups.size(), "Should return all matching groups");
-        assertTrue(actualGroups.contains(testGroup), "Should contain matching group");
-        verify(groupRepository).findByDebutYear(2013);
+        List<GroupDTO> result = groupService.findByDebutYear(2013);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getDebutYear()).isEqualTo(2013);
     }
 
     @Test
-    void findActiveGroups_ShouldReturnActiveGroups() {
-        // Arrange
-        List<Group> expectedGroups = Collections.singletonList(testGroup);
-        when(groupRepository.findActiveGroups()).thenReturn(expectedGroups);
+    void findActiveGroups_ShouldReturnActiveGroupDTOs() {
+        when(repository.findActiveGroups()).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        // Act
-        List<Group> actualGroups = groupService.findActiveGroups();
-        
-        // Assert
-        assertEquals(expectedGroups.size(), actualGroups.size(), "Should return all active groups");
-        assertTrue(actualGroups.contains(testGroup), "Should contain active group");
-        verify(groupRepository).findActiveGroups();
+        List<GroupDTO> result = groupService.findActiveGroups();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getDisbandYear()).isNull();
     }
 
     @Test
-    void findDisbandedGroups_ShouldReturnDisbandedGroups() {
-        // Arrange
+    void findDisbandedGroups_ShouldReturnDisbandedGroupDTOs() {
         Group disbandedGroup = new Group("2NE1", "YG", 2009);
         disbandedGroup.setDisbandYear(2016);
-        List<Group> expectedGroups = Collections.singletonList(disbandedGroup);
-        when(groupRepository.findDisbandedGroups()).thenReturn(expectedGroups);
-
-        // Act
-        List<Group> actualGroups = groupService.findDisbandedGroups();
         
-        // Assert
-        assertEquals(expectedGroups.size(), actualGroups.size(), "Should return all disbanded groups");
-        assertTrue(actualGroups.contains(disbandedGroup), "Should contain disbanded group");
-        verify(groupRepository).findDisbandedGroups();
+        GroupDTO disbandedDTO = GroupDTO.builder()
+                .groupId(disbandedGroup.getGroupId())
+                .groupName(disbandedGroup.getGroupName())
+                .agency(disbandedGroup.getAgency())
+                .debutYear(disbandedGroup.getDebutYear())
+                .disbandYear(disbandedGroup.getDisbandYear())
+                .build();
+
+        when(repository.findDisbandedGroups()).thenReturn(Collections.singletonList(disbandedGroup));
+        when(mapper.toDTO(disbandedGroup)).thenReturn(disbandedDTO);
+
+        List<GroupDTO> result = groupService.findDisbandedGroups();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getDisbandYear()).isEqualTo(2016);
     }
 
     @Test
-    void findByMember_ShouldReturnGroupsWithMember() {
-        // Arrange
-        List<Group> expectedGroups = Collections.singletonList(testGroup);
-        when(groupRepository.findByMember("RM")).thenReturn(expectedGroups);
+    void findByMember_ShouldReturnGroupDTOList() {
+        Group testGroup = new Group("BTS", "HYBE", 2013);
+        testGroup.setGroupId(UUID.randomUUID());
+        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
+        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
 
-        // Act
-        List<Group> actualGroups = groupService.findByMember("RM");
-        
-        // Assert
-        assertEquals(expectedGroups.size(), actualGroups.size(), "Should return all groups with member");
-        assertTrue(actualGroups.contains(testGroup), "Should contain group with member");
-        verify(groupRepository).findByMember("RM");
+        GroupDTO testGroupDTO = GroupDTO.builder()
+                .groupId(testGroup.getGroupId())
+                .groupName(testGroup.getGroupName())
+                .agency(testGroup.getAgency())
+                .debutYear(testGroup.getDebutYear())
+                .members(testGroup.getMembers())
+                .labels(testGroup.getLabels())
+                .build();
+
+        when(repository.findByMembersContaining("RM")).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
+
+        List<GroupDTO> result = groupService.findByMember("RM");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getMembers()).contains("RM");
     }
 
     @Test
-    void findByLabel_ShouldReturnGroupsWithLabel() {
-        // Arrange
-        List<Group> expectedGroups = Collections.singletonList(testGroup);
-        when(groupRepository.findByLabel("kpop")).thenReturn(expectedGroups);
+    void findByLabel_ShouldReturnGroupDTOList() {
+        Group testGroup = new Group("BTS", "HYBE", 2013);
+        testGroup.setGroupId(UUID.randomUUID());
+        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
+        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
 
-        // Act
-        List<Group> actualGroups = groupService.findByLabel("kpop");
-        
-        // Assert
-        assertEquals(expectedGroups.size(), actualGroups.size(), "Should return all groups with label");
-        assertTrue(actualGroups.contains(testGroup), "Should contain group with label");
-        verify(groupRepository).findByLabel("kpop");
+        GroupDTO testGroupDTO = GroupDTO.builder()
+                .groupId(testGroup.getGroupId())
+                .groupName(testGroup.getGroupName())
+                .agency(testGroup.getAgency())
+                .debutYear(testGroup.getDebutYear())
+                .members(testGroup.getMembers())
+                .labels(testGroup.getLabels())
+                .build();
+
+        when(repository.findByLabelsContaining("kpop")).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
+
+        List<GroupDTO> result = groupService.findByLabel("kpop");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getLabels()).contains("kpop");
     }
 }
