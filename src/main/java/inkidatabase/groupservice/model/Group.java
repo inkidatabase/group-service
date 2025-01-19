@@ -12,7 +12,7 @@ import enums.GroupActiveStatus;
 @Getter 
 @NoArgsConstructor
 public class Group {
-    private UUID groupId;
+    private UUID groupId = UUID.randomUUID();  // Initialize with a default value
     private String groupName;
     private String agency;
     private List<String> labels = new ArrayList<>();

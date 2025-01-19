@@ -14,7 +14,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-public class GroupRepositoryTest {
+class GroupRepositoryTest {
     
     private GroupRepository groupRepository;
     
