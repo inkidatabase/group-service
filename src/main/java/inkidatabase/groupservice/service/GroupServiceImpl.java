@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -30,7 +29,7 @@ public class GroupServiceImpl implements GroupService {
     public List<GroupDTO> findAll() {
         return repository.findAll().stream()
                 .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -60,41 +59,41 @@ public class GroupServiceImpl implements GroupService {
     public List<GroupDTO> findByAgency(String agency) {
         return repository.findByAgencyIgnoreCase(agency).stream()
                 .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<GroupDTO> findByDebutYear(int year) {
         return repository.findByDebutYear(year).stream()
                 .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<GroupDTO> findActiveGroups() {
         return repository.findActiveGroups().stream()
                 .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<GroupDTO> findDisbandedGroups() {
         return repository.findDisbandedGroups().stream()
                 .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<GroupDTO> findByMember(String memberName) {
         return repository.findByMembersContaining(memberName).stream()
                 .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<GroupDTO> findByLabel(String label) {
         return repository.findByLabelsContaining(label).stream()
                 .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

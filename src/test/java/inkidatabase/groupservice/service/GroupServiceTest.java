@@ -183,20 +183,6 @@ class GroupServiceTest {
 
     @Test
     void findByMember_ShouldReturnGroupDTOList() {
-        Group testGroup = new Group("BTS", "HYBE", 2013);
-        testGroup.setGroupId(UUID.randomUUID());
-        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
-        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
-
-        GroupDTO testGroupDTO = GroupDTO.builder()
-                .groupId(testGroup.getGroupId())
-                .groupName(testGroup.getGroupName())
-                .agency(testGroup.getAgency())
-                .debutYear(testGroup.getDebutYear())
-                .members(testGroup.getMembers())
-                .labels(testGroup.getLabels())
-                .build();
-
         when(repository.findByMembersContaining("RM")).thenReturn(Collections.singletonList(testGroup));
         when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
@@ -208,20 +194,6 @@ class GroupServiceTest {
 
     @Test
     void findByLabel_ShouldReturnGroupDTOList() {
-        Group testGroup = new Group("BTS", "HYBE", 2013);
-        testGroup.setGroupId(UUID.randomUUID());
-        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
-        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
-
-        GroupDTO testGroupDTO = GroupDTO.builder()
-                .groupId(testGroup.getGroupId())
-                .groupName(testGroup.getGroupName())
-                .agency(testGroup.getAgency())
-                .debutYear(testGroup.getDebutYear())
-                .members(testGroup.getMembers())
-                .labels(testGroup.getLabels())
-                .build();
-
         when(repository.findByLabelsContaining("kpop")).thenReturn(Collections.singletonList(testGroup));
         when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
