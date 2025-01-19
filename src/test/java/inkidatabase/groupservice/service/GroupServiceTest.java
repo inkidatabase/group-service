@@ -1,159 +1,233 @@
 package inkidatabase.groupservice.service;
 
+import inkidatabase.groupservice.dto.CreateGroupRequest;
+import inkidatabase.groupservice.dto.GroupDTO;
+import inkidatabase.groupservice.dto.UpdateGroupRequest;
+import inkidatabase.groupservice.mapper.GroupMapper;
 import inkidatabase.groupservice.model.Group;
 import inkidatabase.groupservice.repository.GroupRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class GroupServiceTest {
 
     @Mock
-    private GroupRepository groupRepository;
+    private GroupRepository repository;
 
-    @InjectMocks
-    private GroupServiceImpl groupService;
+    @Mock
+    private GroupMapper mapper;
 
+    private GroupService groupService;
     private Group testGroup;
-    private UUID testId;
+    private GroupDTO testGroupDTO;
+    private CreateGroupRequest createRequest;
+    private UpdateGroupRequest updateRequest;
 
     @BeforeEach
     void setUp() {
-        testGroup = new Group("BTS", "BigHit Music", 2013);
-        testId = testGroup.getGroupId();
+        groupService = new GroupServiceImpl(repository, mapper);
+
+        testGroup = new Group("BTS", "HYBE", 2013);
+        testGroup.setGroupId(UUID.randomUUID());
+        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
+        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
+
+        testGroupDTO = GroupDTO.builder()
+                .groupId(testGroup.getGroupId())
+                .groupName(testGroup.getGroupName())
+                .agency(testGroup.getAgency())
+                .debutYear(testGroup.getDebutYear())
+                .members(testGroup.getMembers())
+                .labels(testGroup.getLabels())
+                .build();
+
+        createRequest = CreateGroupRequest.builder()
+                .groupName("BTS")
+                .agency("HYBE")
+                .debutYear(2013)
+                .members(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"))
+                .build();
+
+        updateRequest = UpdateGroupRequest.builder()
+                .groupName("BTS")
+                .agency("HYBE")
+                .debutYear(2013)
+                .members(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"))
+                .build();
     }
 
     @Test
-    void testCreate() {
-        when(groupRepository.save(any(Group.class))).thenReturn(testGroup);
-        
-        Group result = groupService.create(testGroup);
-        
-        assertNotNull(result);
-        assertEquals(testGroup.getGroupName(), result.getGroupName());
-        assertEquals(testGroup.getAgency(), result.getAgency());
-        assertEquals(testGroup.getDebutYear(), result.getDebutYear());
+    void create_WithValidRequest_ShouldReturnGroupDTO() {
+        when(mapper.toEntity(createRequest)).thenReturn(testGroup);
+        when(repository.save(any(Group.class))).thenReturn(testGroup);
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
+
+        GroupDTO result = groupService.create(createRequest);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getGroupName()).isEqualTo("BTS");
+        verify(repository).save(any(Group.class));
     }
 
     @Test
-    void testFindAll() {
-        List<Group> groups = Arrays.asList(
-            testGroup,
-            new Group("TXT", "BigHit Music", 2019)
-        );
-        
-        when(groupRepository.findAll()).thenReturn(groups);
+    void update_WithValidRequest_ShouldReturnUpdatedGroupDTO() {
+        UUID groupId = testGroup.getGroupId();
+        when(repository.findById(groupId)).thenReturn(Optional.of(testGroup));
+        when(repository.save(any(Group.class))).thenReturn(testGroup);
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        List<Group> result = groupService.findAll();
-        
-        assertEquals(2, result.size());
-        assertEquals("BTS", result.get(0).getGroupName());
-        assertEquals("TXT", result.get(1).getGroupName());
+        GroupDTO result = groupService.update(groupId, updateRequest);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getGroupName()).isEqualTo("BTS");
+        verify(repository).save(any(Group.class));
     }
 
     @Test
-    void testFindById() {
-        when(groupRepository.findById(testId)).thenReturn(Optional.of(testGroup));
+    void findAll_ShouldReturnAllGroupDTOs() {
+        when(repository.findAll()).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        Optional<Group> result = groupService.findById(testId);
-        
-        assertTrue(result.isPresent());
-        assertEquals(testGroup.getGroupName(), result.get().getGroupName());
+        List<GroupDTO> result = groupService.findAll();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getGroupName()).isEqualTo("BTS");
     }
 
     @Test
-    void testFindByIdNotFound() {
-        when(groupRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
+    void findById_WhenExists_ShouldReturnGroupDTO() {
+        UUID groupId = testGroup.getGroupId();
+        when(repository.findById(groupId)).thenReturn(Optional.of(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        Optional<Group> result = groupService.findById(UUID.randomUUID());
-        
-        assertTrue(result.isEmpty());
+        Optional<GroupDTO> result = groupService.findById(groupId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getGroupName()).isEqualTo("BTS");
     }
 
     @Test
-    void testFindByAgency() {
-        List<Group> groups = Arrays.asList(
-            testGroup,
-            new Group("TXT", "BigHit Music", 2019)
-        );
-        
-        when(groupRepository.findByAgencyIgnoreCase("BigHit Music")).thenReturn(groups);
+    void findById_WhenNotExists_ShouldReturnEmpty() {
+        UUID groupId = UUID.randomUUID();
+        when(repository.findById(groupId)).thenReturn(Optional.empty());
 
-        List<Group> result = groupService.findByAgency("BigHit Music");
-        
-        assertEquals(2, result.size());
-        assertTrue(result.stream().allMatch(g -> g.getAgency().equals("BigHit Music")));
+        Optional<GroupDTO> result = groupService.findById(groupId);
+
+        assertThat(result).isEmpty();
     }
 
     @Test
-    void testFindByDebutYear() {
-        when(groupRepository.findByDebutYear(2013))
-            .thenReturn(Collections.singletonList(testGroup));
+    void findByAgency_ShouldReturnGroupDTOs() {
+        when(repository.findByAgencyIgnoreCase("HYBE")).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        List<Group> result = groupService.findByDebutYear(2013);
-        
-        assertEquals(1, result.size());
-        assertEquals(2013, result.get(0).getDebutYear());
+        List<GroupDTO> result = groupService.findByAgency("HYBE");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getAgency()).isEqualTo("HYBE");
     }
 
     @Test
-    void testFindActiveGroups() {
-        when(groupRepository.findActiveGroups())
-            .thenReturn(Collections.singletonList(testGroup));
+    void findByDebutYear_ShouldReturnGroupDTOs() {
+        when(repository.findByDebutYear(2013)).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
 
-        List<Group> result = groupService.findActiveGroups();
-        
-        assertEquals(1, result.size());
-        assertEquals(0, result.get(0).getDisbandYear());
+        List<GroupDTO> result = groupService.findByDebutYear(2013);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getDebutYear()).isEqualTo(2013);
     }
 
     @Test
-    void testFindDisbandedGroups() {
-        Group disbandedGroup = new Group("2NE1", "YG Entertainment", 2009);
+    void findActiveGroups_ShouldReturnActiveGroupDTOs() {
+        when(repository.findActiveGroups()).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
+
+        List<GroupDTO> result = groupService.findActiveGroups();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getDisbandYear()).isNull();
+    }
+
+    @Test
+    void findDisbandedGroups_ShouldReturnDisbandedGroupDTOs() {
+        Group disbandedGroup = new Group("2NE1", "YG", 2009);
         disbandedGroup.setDisbandYear(2016);
         
-        when(groupRepository.findDisbandedGroups())
-            .thenReturn(Collections.singletonList(disbandedGroup));
+        GroupDTO disbandedDTO = GroupDTO.builder()
+                .groupId(disbandedGroup.getGroupId())
+                .groupName(disbandedGroup.getGroupName())
+                .agency(disbandedGroup.getAgency())
+                .debutYear(disbandedGroup.getDebutYear())
+                .disbandYear(disbandedGroup.getDisbandYear())
+                .build();
 
-        List<Group> result = groupService.findDisbandedGroups();
-        
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getDisbandYear() > 0);
+        when(repository.findDisbandedGroups()).thenReturn(Collections.singletonList(disbandedGroup));
+        when(mapper.toDTO(disbandedGroup)).thenReturn(disbandedDTO);
+
+        List<GroupDTO> result = groupService.findDisbandedGroups();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getDisbandYear()).isEqualTo(2016);
     }
 
     @Test
-    void testFindByMember() {
-        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga"));
-        
-        when(groupRepository.findByMember("RM"))
-            .thenReturn(Collections.singletonList(testGroup));
+    void findByMember_ShouldReturnGroupDTOList() {
+        Group testGroup = new Group("BTS", "HYBE", 2013);
+        testGroup.setGroupId(UUID.randomUUID());
+        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
+        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
 
-        List<Group> result = groupService.findByMember("RM");
-        
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getMembers().contains("RM"));
+        GroupDTO testGroupDTO = GroupDTO.builder()
+                .groupId(testGroup.getGroupId())
+                .groupName(testGroup.getGroupName())
+                .agency(testGroup.getAgency())
+                .debutYear(testGroup.getDebutYear())
+                .members(testGroup.getMembers())
+                .labels(testGroup.getLabels())
+                .build();
+
+        when(repository.findByMembersContaining("RM")).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
+
+        List<GroupDTO> result = groupService.findByMember("RM");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getMembers()).contains("RM");
     }
 
     @Test
-    void testFindByLabel() {
-        testGroup.setLabels(Arrays.asList("HYBE", "BigHit Music"));
-        
-        when(groupRepository.findByLabel("HYBE"))
-            .thenReturn(Collections.singletonList(testGroup));
+    void findByLabel_ShouldReturnGroupDTOList() {
+        Group testGroup = new Group("BTS", "HYBE", 2013);
+        testGroup.setGroupId(UUID.randomUUID());
+        testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
+        testGroup.setLabels(Arrays.asList("kpop", "bighit"));
 
-        List<Group> result = groupService.findByLabel("HYBE");
-        
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getLabels().contains("HYBE"));
+        GroupDTO testGroupDTO = GroupDTO.builder()
+                .groupId(testGroup.getGroupId())
+                .groupName(testGroup.getGroupName())
+                .agency(testGroup.getAgency())
+                .debutYear(testGroup.getDebutYear())
+                .members(testGroup.getMembers())
+                .labels(testGroup.getLabels())
+                .build();
+
+        when(repository.findByLabelsContaining("kpop")).thenReturn(Collections.singletonList(testGroup));
+        when(mapper.toDTO(testGroup)).thenReturn(testGroupDTO);
+
+        List<GroupDTO> result = groupService.findByLabel("kpop");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getLabels()).contains("kpop");
     }
 }

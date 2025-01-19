@@ -10,7 +10,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @ComponentScan(basePackages = {
     "inkidatabase.groupservice.controller",
     "inkidatabase.groupservice.service",
-    "inkidatabase.groupservice.repository"
+    "inkidatabase.groupservice.repository",
+    "inkidatabase.groupservice.mapper"
 })
 @EntityScan("inkidatabase.groupservice.model")
 @EnableJpaRepositories("inkidatabase.groupservice.repository")
