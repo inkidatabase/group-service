@@ -3,7 +3,6 @@ package inkidatabase.groupservice.controller;
 import inkidatabase.groupservice.model.Group;
 import inkidatabase.groupservice.service.GroupService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 

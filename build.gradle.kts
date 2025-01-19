@@ -32,11 +32,15 @@ val junitJupiterVersion = "5.9.1"
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     annotationProcessor("org.projectlombok:lombok")
+    
+    // Testing dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.h2database:h2")  // H2 database for testing
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumJavaVersion")
@@ -44,6 +48,13 @@ dependencies {
     testImplementation("io.github.bonigarcia:webdrivermanager:$webdrivermanagerVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
+
+    // PostgreSQL driver
+    implementation("org.postgresql:postgresql:42.6.0")
+    // Spring Data JPA
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // Environment configuration
+    implementation("me.paulschwarz:spring-dotenv:4.0.0")
 }
 
 tasks.register<Test>("unitTest") {

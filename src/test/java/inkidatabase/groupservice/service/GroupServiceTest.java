@@ -35,7 +35,7 @@ class GroupServiceTest {
 
     @Test
     void testCreate() {
-        when(groupRepository.create(any(Group.class))).thenReturn(testGroup);
+        when(groupRepository.save(any(Group.class))).thenReturn(testGroup);
         
         Group result = groupService.create(testGroup);
         
@@ -52,8 +52,7 @@ class GroupServiceTest {
             new Group("TXT", "BigHit Music", 2019)
         );
         
-        when(groupRepository.findAll())
-            .thenReturn(new ArrayList<>(groups).iterator());
+        when(groupRepository.findAll()).thenReturn(groups);
 
         List<Group> result = groupService.findAll();
         
@@ -64,8 +63,7 @@ class GroupServiceTest {
 
     @Test
     void testFindById() {
-        when(groupRepository.findById(testId))
-            .thenReturn(Collections.singletonList(testGroup).iterator());
+        when(groupRepository.findById(testId)).thenReturn(Optional.of(testGroup));
 
         Optional<Group> result = groupService.findById(testId);
         
@@ -75,12 +73,11 @@ class GroupServiceTest {
 
     @Test
     void testFindByIdNotFound() {
-        when(groupRepository.findById(any(UUID.class)))
-            .thenReturn(Collections.emptyIterator());
+        when(groupRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         Optional<Group> result = groupService.findById(UUID.randomUUID());
         
-        assertFalse(result.isPresent());
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -90,8 +87,7 @@ class GroupServiceTest {
             new Group("TXT", "BigHit Music", 2019)
         );
         
-        when(groupRepository.findByAgency("BigHit Music"))
-            .thenReturn(groups.iterator());
+        when(groupRepository.findByAgencyIgnoreCase("BigHit Music")).thenReturn(groups);
 
         List<Group> result = groupService.findByAgency("BigHit Music");
         
@@ -102,7 +98,7 @@ class GroupServiceTest {
     @Test
     void testFindByDebutYear() {
         when(groupRepository.findByDebutYear(2013))
-            .thenReturn(Collections.singletonList(testGroup).iterator());
+            .thenReturn(Collections.singletonList(testGroup));
 
         List<Group> result = groupService.findByDebutYear(2013);
         
@@ -113,7 +109,7 @@ class GroupServiceTest {
     @Test
     void testFindActiveGroups() {
         when(groupRepository.findActiveGroups())
-            .thenReturn(Collections.singletonList(testGroup).iterator());
+            .thenReturn(Collections.singletonList(testGroup));
 
         List<Group> result = groupService.findActiveGroups();
         
@@ -127,7 +123,7 @@ class GroupServiceTest {
         disbandedGroup.setDisbandYear(2016);
         
         when(groupRepository.findDisbandedGroups())
-            .thenReturn(Collections.singletonList(disbandedGroup).iterator());
+            .thenReturn(Collections.singletonList(disbandedGroup));
 
         List<Group> result = groupService.findDisbandedGroups();
         
@@ -140,7 +136,7 @@ class GroupServiceTest {
         testGroup.setMembers(Arrays.asList("RM", "Jin", "Suga"));
         
         when(groupRepository.findByMember("RM"))
-            .thenReturn(Collections.singletonList(testGroup).iterator());
+            .thenReturn(Collections.singletonList(testGroup));
 
         List<Group> result = groupService.findByMember("RM");
         
@@ -153,7 +149,7 @@ class GroupServiceTest {
         testGroup.setLabels(Arrays.asList("HYBE", "BigHit Music"));
         
         when(groupRepository.findByLabel("HYBE"))
-            .thenReturn(Collections.singletonList(testGroup).iterator());
+            .thenReturn(Collections.singletonList(testGroup));
 
         List<Group> result = groupService.findByLabel("HYBE");
         

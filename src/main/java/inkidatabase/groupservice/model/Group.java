@@ -1,5 +1,6 @@
 package inkidatabase.groupservice.model;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
@@ -9,18 +10,49 @@ import java.util.List;
 import java.util.UUID;
 import enums.GroupActiveStatus;
 
+@Entity
+@Table(name = "groups")
 @Getter 
 @NoArgsConstructor
 public class Group {
+    @Id
+    @Column(name = "group_id")
     private UUID groupId = UUID.randomUUID();  // Initialize with a default value
+
+    @Column(name = "group_name", nullable = false)
     private String groupName;
+
+    @Column(nullable = false)
     private String agency;
+
+    @ElementCollection
+    @CollectionTable(name = "group_labels", joinColumns = @JoinColumn(name = "group_id"))
+    @Column(name = "label")
     private List<String> labels = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "group_members", joinColumns = @JoinColumn(name = "group_id"))
+    @Column(name = "member")
     private List<String> members = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "group_former_members", joinColumns = @JoinColumn(name = "group_id"))
+    @Column(name = "former_member")
     private List<String> formerMembers = new ArrayList<>();
+
+    @Column(name = "debut_year", nullable = false)
     private int debutYear;
+
+    @Column(name = "disband_year")
     private int disbandYear;
+
+    @ElementCollection
+    @CollectionTable(name = "group_subunits", joinColumns = @JoinColumn(name = "group_id"))
+    @Column(name = "subunit")
     private List<String> subunits = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private GroupActiveStatus status = GroupActiveStatus.ACTIVE;
 
     // Simple constructor for testing
