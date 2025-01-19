@@ -19,6 +19,9 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public Group create(Group group) {
+        if (group.getGroupId() == null) {
+            group.setGroupId(UUID.randomUUID());
+        }
         return groupRepository.create(group);
     }
 
