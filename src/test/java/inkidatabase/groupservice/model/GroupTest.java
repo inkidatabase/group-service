@@ -2,7 +2,10 @@ package inkidatabase.groupservice.model;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.annotation.DirtiesContext;
+import jakarta.persistence.EntityManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import enums.GroupActiveStatus;
 
 import java.util.Arrays;
@@ -11,7 +14,12 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DataJpaTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class GroupTest {
+    @Autowired
+    private EntityManager entityManager;
+
     Group btsGroup;
     UUID uuid = UUID.randomUUID();
 
@@ -401,5 +409,70 @@ class GroupTest {
         } catch (Exception e) {
             fail("Failed to test null members case: " + e.getMessage());
         }
+    }
+
+    @Test
+    void testPersistAndRetrieveGroup() {
+        entityManager.persist(btsGroup);
+        entityManager.flush();
+        
+        Group retrievedGroup = entityManager.find(Group.class, uuid);
+        assertNotNull(retrievedGroup);
+        assertEquals("BTS", retrievedGroup.getGroupName());
+        assertEquals("BigHit Music", retrievedGroup.getAgency());
+        assertEquals(2013, retrievedGroup.getDebutYear());
+    }
+
+    @Test
+    void testPersistGroupWithCollections() {
+        List<String> labels = Arrays.asList("HYBE Labels", "BigHit Music");
+        List<String> members = Arrays.asList("RM", "Jin", "Suga");
+        btsGroup.setLabels(labels);
+        btsGroup.setMembers(members);
+
+        entityManager.persist(btsGroup);
+        entityManager.flush();
+
+        Group retrievedGroup = entityManager.find(Group.class, uuid);
+        assertEquals(2, retrievedGroup.getLabels().size());
+        assertEquals(3, retrievedGroup.getMembers().size());
+        assertTrue(retrievedGroup.getLabels().contains("HYBE Labels"));
+        assertTrue(retrievedGroup.getMembers().contains("RM"));
+    }
+
+    @Test
+    void testCollectionsPersistence() {
+        Group group = Group.builder("SEVENTEEN", "PLEDIS Entertainment", 2015)
+                        .labels(Arrays.asList("HYBE Labels", "PLEDIS"))
+                        .members(Arrays.asList("S.Coups", "Woozi", "Mingyu"))
+                        .subunits(Arrays.asList("BSS"))
+                        .build();
+        
+        entityManager.persist(group);
+        entityManager.flush();
+        
+        Group retrievedGroup = entityManager.find(Group.class, group.getGroupId());
+        assertEquals(2, retrievedGroup.getLabels().size());
+        assertEquals(3, retrievedGroup.getMembers().size());
+        assertEquals(1, retrievedGroup.getSubunits().size());
+    }
+
+    @Test
+    void testStatusPersistence() {
+        Group group = new Group("NewJeans", "ADOR", 2022);
+        group.addMember("Hanni");
+        assertEquals(GroupActiveStatus.ACTIVE, group.getStatus());
+        
+        entityManager.persist(group);
+        entityManager.flush();
+        
+        Group retrievedGroup = entityManager.find(Group.class, group.getGroupId());
+        assertEquals(GroupActiveStatus.ACTIVE, retrievedGroup.getStatus());
+        
+        retrievedGroup.setDisbandYear(2024);
+        entityManager.flush();
+        
+        Group disbandedGroup = entityManager.find(Group.class, group.getGroupId());
+        assertEquals(GroupActiveStatus.DISBANDED, disbandedGroup.getStatus());
     }
 }

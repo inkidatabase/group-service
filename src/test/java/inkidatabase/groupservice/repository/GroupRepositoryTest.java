@@ -1,88 +1,75 @@
 package inkidatabase.groupservice.repository;
 
 import inkidatabase.groupservice.model.Group;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.Iterator;
+import java.util.List;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(MockitoExtension.class)
+@DataJpaTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class GroupRepositoryTest {
     
+    @Autowired
     private GroupRepository groupRepository;
-    
-    @BeforeEach
-    public void setUp() {
-        groupRepository = new GroupRepository();
-    }
-
-    @AfterEach
-    public void tearDown() {
-        // Clear all groups after each test
-        Iterator<Group> iterator = groupRepository.findAll();
-        while (iterator.hasNext()) {
-            iterator.next();
-            iterator.remove();
-        }
-    }
 
     @Test
     void testFindAll() {
-        Iterator<Group> groupIterator = groupRepository.findAll();
-        assertFalse(groupIterator.hasNext());
+        List<Group> groups = groupRepository.findAll();
+        assertTrue(groups.isEmpty());
     }
 
     @Test
     void testFindAllMoreThanOneGroup() {
         // Create first group
         Group group1 = new Group("BTS", "BigHit Music", 2013);
-        groupRepository.create(group1);
+        groupRepository.save(group1);
 
         // Create second group
         Group group2 = new Group("Stray Kids", "JYP Entertainment", 2018);
-        groupRepository.create(group2);
+        groupRepository.save(group2);
 
-        // Test iteration and group properties
-        Iterator<Group> groupIterator = groupRepository.findAll();
+        // Test finding all groups
+        List<Group> groups = groupRepository.findAll();
+        assertEquals(2, groups.size());
         
-        assertTrue(groupIterator.hasNext());
-        Group savedGroup1 = groupIterator.next();
+        Group savedGroup1 = groups.stream()
+                .filter(g -> g.getGroupName().equals("BTS"))
+                .findFirst()
+                .orElseThrow();
         assertNotNull(savedGroup1.getGroupId());
-        assertEquals("BTS", savedGroup1.getGroupName());
         assertEquals("BigHit Music", savedGroup1.getAgency());
         assertEquals(2013, savedGroup1.getDebutYear());
         
-        assertTrue(groupIterator.hasNext());
-        Group savedGroup2 = groupIterator.next();
+        Group savedGroup2 = groups.stream()
+                .filter(g -> g.getGroupName().equals("Stray Kids"))
+                .findFirst()
+                .orElseThrow();
         assertNotNull(savedGroup2.getGroupId());
-        assertEquals("Stray Kids", savedGroup2.getGroupName());
         assertEquals("JYP Entertainment", savedGroup2.getAgency());
         assertEquals(2018, savedGroup2.getDebutYear());
-        
-        assertFalse(groupIterator.hasNext());
     }
 
     @Test
     void testFindById() {
         Group group = new Group("BTS", "BigHit Music", 2013);
-        groupRepository.create(group);
-        UUID groupId = group.getGroupId();
+        Group savedGroup = groupRepository.save(group);
+        UUID groupId = savedGroup.getGroupId();
 
-        Iterator<Group> result = groupRepository.findById(groupId);
-        assertTrue(result.hasNext());
-        assertEquals(groupId, result.next().getGroupId());
-        assertFalse(result.hasNext());
+        Optional<Group> result = groupRepository.findById(groupId);
+        assertTrue(result.isPresent());
+        assertEquals(groupId, result.get().getGroupId());
 
         // Test non-existent ID
-        Iterator<Group> nonExistent = groupRepository.findById(UUID.randomUUID());
-        assertFalse(nonExistent.hasNext());
+        Optional<Group> nonExistent = groupRepository.findById(UUID.randomUUID());
+        assertTrue(nonExistent.isEmpty());
     }
 
     @Test
@@ -91,17 +78,15 @@ class GroupRepositoryTest {
         Group group2 = new Group("TXT", "BigHit Music", 2019);
         Group group3 = new Group("Stray Kids", "JYP Entertainment", 2018);
         
-        groupRepository.create(group1);
-        groupRepository.create(group2);
-        groupRepository.create(group3);
+        groupRepository.save(group1);
+        groupRepository.save(group2);
+        groupRepository.save(group3);
 
-        Iterator<Group> bighitGroups = groupRepository.findByAgency("BigHit Music");
-        int count = 0;
-        while (bighitGroups.hasNext()) {
-            assertEquals("BigHit Music", bighitGroups.next().getAgency());
-            count++;
-        }
-        assertEquals(2, count);
+        List<Group> bighitGroups = groupRepository.findByAgencyIgnoreCase("BigHit Music");
+        assertEquals(2, bighitGroups.size());
+        bighitGroups.forEach(group -> 
+            assertEquals("BigHit Music", group.getAgency())
+        );
     }
 
     @Test
@@ -109,15 +94,14 @@ class GroupRepositoryTest {
         Group group1 = new Group("BTS", "BigHit Music", 2013);
         Group group2 = new Group("TXT", "BigHit Music", 2019);
         
-        groupRepository.create(group1);
-        groupRepository.create(group2);
+        groupRepository.save(group1);
+        groupRepository.save(group2);
 
-        Iterator<Group> groups2013 = groupRepository.findByDebutYear(2013);
-        assertTrue(groups2013.hasNext());
-        Group found = groups2013.next();
+        List<Group> groups2013 = groupRepository.findByDebutYear(2013);
+        assertEquals(1, groups2013.size());
+        Group found = groups2013.get(0);
         assertEquals(2013, found.getDebutYear());
         assertEquals("BTS", found.getGroupName());
-        assertFalse(groups2013.hasNext());
     }
 
     @Test
@@ -126,18 +110,16 @@ class GroupRepositoryTest {
         Group group2 = new Group("2NE1", "YG Entertainment", 2009);
         group2.setDisbandYear(2016);
         
-        groupRepository.create(group1);
-        groupRepository.create(group2);
+        groupRepository.save(group1);
+        groupRepository.save(group2);
 
-        Iterator<Group> activeGroups = groupRepository.findActiveGroups();
-        assertTrue(activeGroups.hasNext());
-        assertEquals("BTS", activeGroups.next().getGroupName());
-        assertFalse(activeGroups.hasNext());
+        List<Group> activeGroups = groupRepository.findActiveGroups();
+        assertEquals(1, activeGroups.size());
+        assertEquals("BTS", activeGroups.get(0).getGroupName());
 
-        Iterator<Group> disbandedGroups = groupRepository.findDisbandedGroups();
-        assertTrue(disbandedGroups.hasNext());
-        assertEquals("2NE1", disbandedGroups.next().getGroupName());
-        assertFalse(disbandedGroups.hasNext());
+        List<Group> disbandedGroups = groupRepository.findDisbandedGroups();
+        assertEquals(1, disbandedGroups.size());
+        assertEquals("2NE1", disbandedGroups.get(0).getGroupName());
     }
 
     @Test
@@ -145,48 +127,45 @@ class GroupRepositoryTest {
         // Test with current members
         Group group1 = new Group("BTS", "BigHit Music", 2013);
         group1.setMembers(Arrays.asList("RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"));
-        groupRepository.create(group1);
+        groupRepository.save(group1);
 
         // Test with former members
         Group group2 = new Group("2NE1", "YG Entertainment", 2009);
         group2.setMembers(Arrays.asList("CL", "Dara", "Bom"));
         group2.setFormerMembers(Arrays.asList("Minzy"));
         group2.setDisbandYear(2016);
-        groupRepository.create(group2);
+        groupRepository.save(group2);
 
         // Test finding current member
-        Iterator<Group> currentMemberGroups = groupRepository.findByMember("Jimin");
-        assertTrue(currentMemberGroups.hasNext());
-        Group foundCurrent = currentMemberGroups.next();
+        List<Group> currentMemberGroups = groupRepository.findByMember("Jimin");
+        assertEquals(1, currentMemberGroups.size());
+        Group foundCurrent = currentMemberGroups.get(0);
         assertTrue(foundCurrent.getMembers().contains("Jimin"));
-        assertFalse(currentMemberGroups.hasNext());
 
         // Test finding former member
-        Iterator<Group> formerMemberGroups = groupRepository.findByMember("Minzy");
-        assertTrue(formerMemberGroups.hasNext());
-        Group foundFormer = formerMemberGroups.next();
+        List<Group> formerMemberGroups = groupRepository.findByMember("Minzy");
+        assertEquals(1, formerMemberGroups.size());
+        Group foundFormer = formerMemberGroups.get(0);
         assertTrue(foundFormer.getFormerMembers().contains("Minzy"));
-        assertFalse(formerMemberGroups.hasNext());
 
         // Test with non-existent member
-        Iterator<Group> nonExistent = groupRepository.findByMember("NonExistentMember");
-        assertFalse(nonExistent.hasNext());
+        List<Group> nonExistent = groupRepository.findByMember("NonExistentMember");
+        assertTrue(nonExistent.isEmpty());
     }
 
     @Test
     void testFindByLabel() {
         Group group = new Group("BTS", "BigHit Music", 2013);
         group.setLabels(Arrays.asList("HYBE", "BigHit Music"));
-        groupRepository.create(group);
+        groupRepository.save(group);
 
-        Iterator<Group> groups = groupRepository.findByLabel("HYBE");
-        assertTrue(groups.hasNext());
-        Group found = groups.next();
+        List<Group> groups = groupRepository.findByLabel("HYBE");
+        assertEquals(1, groups.size());
+        Group found = groups.get(0);
         assertTrue(found.getLabels().contains("HYBE"));
-        assertFalse(groups.hasNext());
 
         // Test with non-existent label
-        Iterator<Group> nonExistent = groupRepository.findByLabel("NonExistentLabel");
-        assertFalse(nonExistent.hasNext());
+        List<Group> nonExistent = groupRepository.findByLabel("NonExistentLabel");
+        assertTrue(nonExistent.isEmpty());
     }
 }
